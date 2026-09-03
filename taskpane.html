@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Nuevo Ingreso NNA</title>
+    <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 15px; background-color: #f8f9fa; }
+        h2 { font-size: 18px; color: #333; margin-top: 0; }
+        .btn-clipboard { width: 100%; background-color: #198754; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-bottom: 15px; }
+        .btn-clipboard:hover { background-color: #146c43; }
+        .form-group { margin-bottom: 12px; }
+        label { display: block; font-size: 12px; font-weight: bold; margin-bottom: 4px; color: #495057; }
+        input, select { width: 100%; padding: 8px; border: 1px solid #ced4da; border-radius: 4px; box-sizing: border-box; font-size: 13px; }
+        .btn-submit { width: 100%; background-color: #0d6efd; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .btn-submit:hover { background-color: #0b5ed7; }
+    </style>
+</head>
+<body>
+    <h2>Nuevo ingreso</h2>
+    
+    <button class="btn-clipboard" onclick="pegarPortapapeles()">📋 Pegar Ficha desde Portapapeles</button>
+
+    <form id="formIngreso">
+        <div class="form-group">
+            <label>Equipo integrado:</label>
+            <select id="dupla">
+                <option value="Mariana / Claudia (M/C)">Mariana / Claudia (M/C)</option>
+                <option value="Alexander / Paulina">Alexander / Paulina</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Nombres:</label>
+            <input type="text" id="nombres" required>
+        </div>
+
+        <div class="form-group">
+            <label>Apellido paterno:</label>
+            <input type="text" id="apellidoPaterno" required>
+        </div>
+
+        <div class="form-group">
+            <label>Apellido materno:</label>
+            <input type="text" id="apellidoMaterno" required>
+        </div>
+
+        <div class="form-group">
+            <label>Cédula de Identidad (RUT):</label>
+            <input type="text" id="rut" placeholder="12.345.678-K" required>
+        </div>
+
+        <div class="form-group">
+            <label>RIT (X-123-AAAA):</label>
+            <input type="text" id="rit" placeholder="X-" required>
+        </div>
+
+        <div class="form-group">
+            <label>Fecha de nacimiento:</label>
+            <input type="date" id="fechaNacimiento" required>
+        </div>
+
+        <div class="form-group">
+            <label>Fecha de ingreso:</label>
+            <input type="date" id="fechaIngreso" required>
+        </div>
+
+        <div class="form-group">
+            <label>Dirección:</label>
+            <input type="text" id="direccion" required>
+        </div>
+
+        <div class="form-group">
+            <label>CESFAM:</label>
+            <input type="text" id="cesfam">
+        </div>
+
+        <div class="form-group">
+            <label>Colegio:</label>
+            <input type="text" id="colegio">
+        </div>
+
+        <button type="button" class="btn-submit" onclick="guardarDatos()">Guardar Ingreso</button>
+    </form>
+
+    <script>
+        Office.onReady(() => {});
+
+        async function guardarDatos() {
+            const datos = [
+                document.getElementById('dupla').value,
+                document.getElementById('nombres').value,
+                document.getElementById('apellidoPaterno').value,
+                document.getElementById('apellidoMaterno').value,
+                document.getElementById('rut').value,
+                document.getElementById('rit').value,
+                document.getElementById('fechaNacimiento').value,
+                document.getElementById('fechaIngreso').value,
+                document.getElementById('direccion').value,
+                document.getElementById('cesfam').value,
+                document.getElementById('colegio').value
+            ];
+
+            await Excel.run(async (context) => {
+                const sheet = context.workbook.worksheets.getItem("ESTADO CASOS");
+                // Ejecuta la lógica directamente en la tabla
+                sheet.activate();
+                await context.sync();
+            });
+        }
+
+        async function pegarPortapapeles() {
+            const text = await navigator.clipboard.readText();
+            // Lógica para parsear el texto pegado desde el portapapeles
+            alert("Texto cargado desde portapapeles");
+        }
+    </script>
+</body>
+</html>
