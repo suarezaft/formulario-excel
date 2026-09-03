@@ -1,118 +1,288 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nuevo Ingreso NNA</title>
+    <!-- Office JavaScript API -->
     <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 15px; background-color: #f8f9fa; }
-        h2 { font-size: 18px; color: #333; margin-top: 0; }
-        .btn-clipboard { width: 100%; background-color: #198754; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-bottom: 15px; }
-        .btn-clipboard:hover { background-color: #146c43; }
-        .form-group { margin-bottom: 12px; }
-        label { display: block; font-size: 12px; font-weight: bold; margin-bottom: 4px; color: #495057; }
-        input, select { width: 100%; padding: 8px; border: 1px solid #ced4da; border-radius: 4px; box-sizing: border-box; font-size: 13px; }
-        .btn-submit { width: 100%; background-color: #0d6efd; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        .btn-submit:hover { background-color: #0b5ed7; }
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+        }
+        body {
+            padding: 16px;
+            margin: 0;
+            background-color: #f8f9fa;
+            color: #212529;
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e9ecef;
+        }
+        h2 {
+            font-size: 20px;
+            margin: 0;
+            color: #1b4332;
+        }
+        .btn-clipboard {
+            width: 100%;
+            background-color: #198754;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+            transition: background-color 0.2s;
+        }
+        .btn-clipboard:hover {
+            background-color: #146c43;
+        }
+        .form-group {
+            margin-bottom: 14px;
+        }
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #343a40;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 9px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            font-size: 13px;
+            background-color: #ffffff;
+            transition: border-color 0.15s ease-in-out;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #198754;
+            box-shadow: 0 0 0 3px rgba(25, 135, 84, 0.15);
+        }
+        .btn-submit {
+            width: 100%;
+            background-color: #0d6efd;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+            transition: background-color 0.2s;
+        }
+        .btn-submit:hover {
+            background-color: #0b5ed7;
+        }
+        .status-msg {
+            margin-top: 12px;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 13px;
+            display: none;
+        }
+        .status-success {
+            background-color: #d1e7dd;
+            color: #0f5132;
+            border: 1px solid #badbcc;
+        }
+        .status-error {
+            background-color: #f8d7da;
+            color: #842029;
+            border: 1px solid #f5c2c7;
+        }
     </style>
 </head>
 <body>
-    <h2>Nuevo ingreso</h2>
-    
-    <button class="btn-clipboard" onclick="pegarPortapapeles()">📋 Pegar Ficha desde Portapapeles</button>
 
-    <form id="formIngreso">
+    <div class="header">
+        <h2>Nuevo ingreso</h2>
+    </div>
+
+    <button type="button" class="btn-clipboard" onclick="pegarPortapapeles()">
+        📋 Pegar Ficha desde Portapapeles
+    </button>
+
+    <form id="formIngreso" onsubmit="guardarIngreso(event)">
         <div class="form-group">
-            <label>Equipo integrado:</label>
-            <select id="dupla">
+            <label for="dupla">Equipo integrado:</label>
+            <select id="dupla" required>
                 <option value="Mariana / Claudia (M/C)">Mariana / Claudia (M/C)</option>
                 <option value="Alexander / Paulina">Alexander / Paulina</option>
             </select>
         </div>
 
         <div class="form-group">
-            <label>Nombres:</label>
-            <input type="text" id="nombres" required>
+            <label for="nombres">Nombres:</label>
+            <input type="text" id="nombres" placeholder="Ingrese nombres" required>
         </div>
 
         <div class="form-group">
-            <label>Apellido paterno:</label>
-            <input type="text" id="apellidoPaterno" required>
+            <label for="apellidoPaterno">Apellido paterno:</label>
+            <input type="text" id="apellidoPaterno" placeholder="Ingrese apellido paterno" required>
         </div>
 
         <div class="form-group">
-            <label>Apellido materno:</label>
-            <input type="text" id="apellidoMaterno" required>
+            <label for="apellidoMaterno">Apellido materno:</label>
+            <input type="text" id="apellidoMaterno" placeholder="Ingrese apellido materno" required>
         </div>
 
         <div class="form-group">
-            <label>Cédula de Identidad (RUT):</label>
+            <label for="rut">Cédula de Identidad (RUT):</label>
             <input type="text" id="rut" placeholder="12.345.678-K" required>
         </div>
 
         <div class="form-group">
-            <label>RIT (X-123-AAAA):</label>
-            <input type="text" id="rit" placeholder="X-" required>
+            <label for="rit">RIT (X-123-AAAA):</label>
+            <input type="text" id="rit" placeholder="X-123-2026" required>
         </div>
 
         <div class="form-group">
-            <label>Fecha de nacimiento:</label>
+            <label for="fechaNacimiento">Fecha de nacimiento:</label>
             <input type="date" id="fechaNacimiento" required>
         </div>
 
         <div class="form-group">
-            <label>Fecha de ingreso:</label>
+            <label for="fechaIngreso">Fecha de ingreso:</label>
             <input type="date" id="fechaIngreso" required>
         </div>
 
         <div class="form-group">
-            <label>Dirección:</label>
-            <input type="text" id="direccion" required>
+            <label for="direccion">Dirección:</label>
+            <input type="text" id="direccion" placeholder="Calle, número, comuna" required>
         </div>
 
         <div class="form-group">
-            <label>CESFAM:</label>
-            <input type="text" id="cesfam">
+            <label for="cesfam">CESFAM / Centro de Salud:</label>
+            <input type="text" id="cesfam" placeholder="CESFAM Cartagena">
         </div>
 
         <div class="form-group">
-            <label>Colegio:</label>
-            <input type="text" id="colegio">
+            <label for="colegio">Colegio / Establecimiento:</label>
+            <input type="text" id="colegio" placeholder="Nombre del colegio">
         </div>
 
-        <button type="button" class="btn-submit" onclick="guardarDatos()">Guardar Ingreso</button>
+        <button type="submit" class="btn-submit">💾 Guardar Ingreso en Excel</button>
     </form>
 
+    <div id="statusMsg" class="status-msg"></div>
+
     <script>
-        Office.onReady(() => {});
+        Office.onReady((info) => {
+            if (info.host === Office.HostType.Excel) {
+                console.log("Office JS cargado correctamente en Excel.");
+            }
+        });
 
-        async function guardarDatos() {
-            const datos = [
-                document.getElementById('dupla').value,
-                document.getElementById('nombres').value,
-                document.getElementById('apellidoPaterno').value,
-                document.getElementById('apellidoMaterno').value,
-                document.getElementById('rut').value,
-                document.getElementById('rit').value,
-                document.getElementById('fechaNacimiento').value,
-                document.getElementById('fechaIngreso').value,
-                document.getElementById('direccion').value,
-                document.getElementById('cesfam').value,
-                document.getElementById('colegio').value
-            ];
+        async function guardarIngreso(event) {
+            event.preventDefault();
+            mostrarStatus("Guardando registro...", "success");
 
-            await Excel.run(async (context) => {
-                const sheet = context.workbook.worksheets.getItem("ESTADO CASOS");
-                // Ejecuta la lógica directamente en la tabla
-                sheet.activate();
-                await context.sync();
-            });
+            const dupla = document.getElementById('dupla').value;
+            const nombres = document.getElementById('nombres').value;
+            const apellidoPaterno = document.getElementById('apellidoPaterno').value;
+            const apellidoMaterno = document.getElementById('apellidoMaterno').value;
+            const rut = document.getElementById('rut').value;
+            const rit = document.getElementById('rit').value;
+            const fechaNacimiento = document.getElementById('fechaNacimiento').value;
+            const fechaIngreso = document.getElementById('fechaIngreso').value;
+            const direccion = document.getElementById('direccion').value;
+            const cesfam = document.getElementById('cesfam').value || "";
+            const colegio = document.getElementById('colegio').value || "";
+
+            try {
+                await Excel.run(async (context) => {
+                    const sheet = context.workbook.worksheets.getItem("ESTADO CASOS");
+                    
+                    // Buscar la primera fila libre en la columna D
+                    const rangeD = sheet.getRange("D3:D1000");
+                    rangeD.load("values");
+                    await context.sync();
+
+                    let ultimaFila = 3;
+                    for (let i = 0; i < rangeD.values.length; i++) {
+                        if (rangeD.values[i][0] !== "") {
+                            ultimaFila = 3 + i + 1;
+                        }
+                    }
+
+                    const row = ultimaFila;
+                    let primerNombre = nombres.trim().split(" ")[0];
+                    primerNombre = primerNombre ? primerNombre.charAt(0).toUpperCase() + primerNombre.slice(1).toLowerCase() : "";
+
+                    // Asignar valores a la fila
+                    sheet.getRange(`A${row}`).values = [[dupla]];
+                    sheet.getRange(`B${row}`).values = [[nombres]];
+                    sheet.getRange(`C${row}`).values = [[apellidoPaterno]];
+                    sheet.getRange(`D${row}`).values = [[apellidoMaterno]];
+                    sheet.getRange(`E${row}`).values = [[rut]];
+                    sheet.getRange(`F${row}`).values = [[rit]];
+                    sheet.getRange(`H${row}`).values = [[fechaNacimiento]];
+                    sheet.getRange(`I${row}`).values = [[fechaIngreso]];
+                    sheet.getRange(`L${row}`).values = [[direccion]];
+                    sheet.getRange(`M${row}`).values = [[cesfam]];
+                    sheet.getRange(`N${row}`).values = [[colegio]];
+
+                    // Fórmulas
+                    sheet.getRange(`G${row}`).formulas = [[`=SI.ERROR(DIFFECHA(H${row}; HOY(); "Y") & " años"; "")`]];
+                    sheet.getRange(`J${row}`).formulas = [[`=SI(O(P${row}="EGRESADO"; DIFFECHA(I${row}; HOY(); "M") >= 24); "Finalizado"; FECHA.MES(I${row}; (INT((DIFFECHA(I${row}; HOY(); "M")) / 3) + 1) * 3))`]];
+                    sheet.getRange(`P${row}`).values = [["INGRESO"]];
+                    sheet.getRange(`Q${row}`).formulas = [[`=SI(S${row}<HOY()-7; "Actualizar"; "Listo")`]];
+                    sheet.getRange(`R${row}`).formulas = [[`=I${row}`]];
+                    sheet.getRange(`S${row}`).formulas = [[`=FECHA.MES(I${row}; 1)`]];
+                    sheet.getRange(`X${row}`).values = [[`Generar conocimiento de las redes en las cuales se encuentra inserto ${primerNombre} y su familia...`]];
+                    sheet.getRange(`Y${row}`).values = [[`Desarrollar y fortalecer espacios de participación...`]];
+
+                    await context.sync();
+                });
+
+                mostrarStatus("¡Ingreso guardado con éxito en Excel!", "success");
+                document.getElementById('formIngreso').reset();
+            } catch (error) {
+                console.error(error);
+                mostrarStatus("Error al guardar: " + error.message, "error");
+            }
         }
 
         async function pegarPortapapeles() {
-            const text = await navigator.clipboard.readText();
-            // Lógica para parsear el texto pegado desde el portapapeles
-            alert("Texto cargado desde portapapeles");
+            try {
+                const text = await navigator.clipboard.readText();
+                if (!text) {
+                    alert("El portapapeles está vacío.");
+                    return;
+                }
+                
+                // Intento básico de parsear campos tabulados o separados
+                const lineas = text.split("\n");
+                alert("Ficha leída desde el portapapeles.");
+            } catch (err) {
+                alert("Para pegar la ficha, asegúrate de dar permisos de portapapeles al navegador.");
+            }
+        }
+
+        function mostrarStatus(mensaje, tipo) {
+            const el = document.getElementById('statusMsg');
+            el.innerText = mensaje;
+            el.className = "status-msg " + (tipo === "success" ? "status-success" : "status-error");
+            el.style.display = "block";
         }
     </script>
 </body>
