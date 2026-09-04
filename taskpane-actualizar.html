@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Actualizar Intervención NNA</title>
+    <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif; }
+        body { padding: 16px; margin: 0; background-color: #f8f9fa; color: #212529; }
+        .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #e9ecef; }
+        h2 { font-size: 18px; margin: 0; color: #1b4332; }
+        .form-group { margin-bottom: 14px; }
+        label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px; color: #343a40; }
+        input, select { width: 100%; padding: 9px 12px; border: 1px solid #ced4da; border-radius: 6px; font-size: 13px; background-color: #ffffff; }
+        input:focus, select:focus { outline: none; border-color: #ffc107; box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.25); }
+        .btn-search { width: 100%; background-color: #0d6efd; color: white; border: none; padding: 10px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; margin-bottom: 15px; }
+        .btn-update { width: 100%; background-color: #ffc107; color: #000; border: none; padding: 12px; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.08); }
+        .btn-update:hover { background-color: #e0a800; }
+        .status-msg { margin-top: 12px; padding: 10px; border-radius: 6px; font-size: 13px; display: none; }
+        .status-success { background-color: #d1e7dd; color: #0f5132; border: 1px solid #badbcc; }
+        .status-error { background-color: #f8d7da; color: #842029; border: 1px solid #f5c2c7; }
+        .info-box { background-color: #e7f1ff; border: 1px solid #b6d4fe; border-radius: 6px; padding: 10px; margin-bottom: 15px; font-size: 12px; color: #084298; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h2>Actualizar Intervención</h2>
+    </div>
+
+    <div class="form-group">
+        <label for="rutBuscar">Buscar por RUT o Nombre del NNA:</label>
+        <input type="text" id="rutBuscar" placeholder="Ej: 12.345.678-K o Juan">
+    </div>
+    <button type="button" class="btn-search" onclick="buscarCaso()">🔍 Buscar Caso en Excel</button>
+
+    <div id="statusMsg" class="status-msg"></div>
+
+    <div id="formEdicion" style="display: none; margin-top: 15px;">
+        <div id="infoCaso" class="info-box"></div>
+
+        <form onsubmit="actualizarCaso(event)">
+            <div class="form-group">
+                <label for="nuevoEstado">Estado del Caso (Columna P):</label>
+                <select id="nuevoEstado" required>
+                    <option value="INGRESO">INGRESO</option>
+                    <option value="EN PROCESO">EN PROCESO</option>
+                    <option value="EGRESADO">EGRESADO</option>
+                    <option value="FINALIZADO">FINALIZADO</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="nuevaFechaInforme">Nueva Fecha Próximo Informe (Columna J):</label>
+                <input type="date" id="nuevaFechaInforme">
+            </div>
+
+            <button type="submit" class="btn-update">🔄 Guardar Cambios</button>
+        </form>
+    </div>
+
+    <script>
+        let filaEncontrada = null;
+
+        Office.onReady((info) => {
+            if (info.host === Office.HostType.Excel) {
+                console.log("Office JS cargado para Actualizar Intervención.");
+            }
+        });
+
+        function formatoFechaChile(fechaIso) {
+            if (!fechaIso) return "";
+            const p = fechaIso.split("-");
+            return `${p[2]}/${p[1]}/${p[0]}`;
+        }
+
+        async function buscarCaso() {
+            const busqueda = document.getElementById('rutBuscar').value.trim().toLowerCase();
+            if (!busqueda) {
+                mostrarStatus("Ingresa un RUT o Nombre para buscar.", "error");
+                return;
+            }
+
+            mostrarStatus("Buscando en la planilla...", "success");
+
+            try {
+                await Excel.run(async (context) => {
+                    const sheet = context.workbook.worksheets.getItem("ESTADO CASOS");
+                    const range = sheet.getRange("B3:E1000"); // B: Nombres, C: Ap. Paterno, E: RUT
+                    range.load(["values"]);
+                    await context.sync();
+
+                    filaEncontrada = null;
+                    let nombreCompleto = "";
+                    let rutEncontrado = "";
+
+                    for (let i = 0; i < range.values.length; i++) {
+                        const nombre = String(range.values[i][0] || "");
+                        const apPaterno = String(range.values[i][1] || "");
+                        const rut = String(range.values[i][3] || "");
+
+                        if ((rut && rut.toLowerCase().includes(busqueda)) || (nombre && nombre.toLowerCase().includes(busqueda))) {
+                            filaEncontrada = 3 + i;
+                            nombreCompleto = `${nombre} ${apPaterno}`;
+                            rutEncontrado = rut;
+                            break;
+                        }
+                    }
+
+                    if (filaEncontrada) {
+                        document.getElementById('infoCaso').innerHTML = `<strong>NNA:</strong> ${nombreCompleto}<br><strong>RUT:</strong> ${rutEncontrado}<br><strong>Fila en Excel:</strong> ${filaEncontrada}`;
+                        document.getElementById('formEdicion').style.display = 'block';
+                        mostrarStatus("Caso localizado con éxito.", "success");
+                    } else {
+                        document.getElementById('formEdicion').style.display = 'none';
+                        mostrarStatus("No se encontró ningún caso que coincida.", "error");
+                    }
+                });
+            } catch (error) {
+                mostrarStatus("Error al buscar: " + error.message, "error");
+            }
+        }
+
+        async function actualizarCaso(event) {
+            event.preventDefault();
+            if (!filaEncontrada) return;
+
+            mostrarStatus("Actualizando datos...", "success");
+
+            const estado = document.getElementById('nuevoEstado').value;
+            const fechaInfRaw = document.getElementById('nuevaFechaInforme').value;
+
+            try {
+                await Excel.run(async (context) => {
+                    const sheet = context.workbook.worksheets.getItem("ESTADO CASOS");
+
+                    // Actualizar Columna P (Estado)
+                    sheet.getRange(`P${filaEncontrada}`).values = [[estado]];
+
+                    // Si se ingresó una nueva fecha en Columna J
+                    if (fechaInfRaw) {
+                        const fechaFormatted = formatoFechaChile(fechaInfRaw);
+                        sheet.getRange(`J${filaEncontrada}`).numberFormat = [["dd/mm/yyyy"]];
+                        sheet.getRange(`J${filaEncontrada}`).values = [[fechaFormatted]];
+                    }
+
+                    await context.sync();
+                });
+
+                mostrarStatus("¡Intervención actualizada correctamente!", "success");
+                document.getElementById('formEdicion').style.display = 'none';
+                document.getElementById('rutBuscar').value = "";
+            } catch (error) {
+                mostrarStatus("Error al actualizar: " + error.message, "error");
+            }
+        }
+
+        function mostrarStatus(mensaje, tipo) {
+            const el = document.getElementById('statusMsg');
+            el.innerText = mensaje;
+            el.className = "status-msg " + (tipo === "success" ? "status-success" : "status-error");
+            el.style.display = "block";
+        }
+    </script>
+</body>
+</html>
