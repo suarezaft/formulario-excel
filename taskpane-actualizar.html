@@ -4,155 +4,386 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Actualizar Intervención NNA</title>
+    <!-- Office JavaScript API -->
     <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
     <style>
-        * { box-sizing: border-box; font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif; }
-        body { padding: 16px; margin: 0; background-color: #f8f9fa; color: #212529; }
-        .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #e9ecef; }
-        h2 { font-size: 18px; margin: 0; color: #1b4332; }
-        .form-group { margin-bottom: 14px; }
-        label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px; color: #343a40; }
-        input, select { width: 100%; padding: 9px 12px; border: 1px solid #ced4da; border-radius: 6px; font-size: 13px; background-color: #ffffff; }
-        input:focus, select:focus { outline: none; border-color: #ffc107; box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.25); }
-        .btn-search { width: 100%; background-color: #0d6efd; color: white; border: none; padding: 10px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; margin-bottom: 15px; }
-        .btn-update { width: 100%; background-color: #ffc107; color: #000; border: none; padding: 12px; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.08); }
-        .btn-update:hover { background-color: #e0a800; }
-        .status-msg { margin-top: 12px; padding: 10px; border-radius: 6px; font-size: 13px; display: none; }
-        .status-success { background-color: #d1e7dd; color: #0f5132; border: 1px solid #badbcc; }
-        .status-error { background-color: #f8d7da; color: #842029; border: 1px solid #f5c2c7; }
-        .info-box { background-color: #e7f1ff; border: 1px solid #b6d4fe; border-radius: 6px; padding: 10px; margin-bottom: 15px; font-size: 12px; color: #084298; }
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+        }
+        body {
+            padding: 16px;
+            margin: 0;
+            background-color: #f8f9fa;
+            color: #212529;
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e9ecef;
+        }
+        h2 {
+            font-size: 20px;
+            margin: 0;
+            color: #1b4332;
+        }
+        .form-group {
+            margin-bottom: 14px;
+        }
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #343a40;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 9px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            font-size: 13px;
+            background-color: #ffffff;
+            transition: border-color 0.15s ease-in-out;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #ffc107;
+            box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.25);
+        }
+        /* Cuadro "Estabas trabajando" */
+        .card-trabajando {
+            background-color: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-left: 4px solid #0d6efd;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .card-trabajando h3 {
+            margin: 0 0 8px 0;
+            font-size: 14px;
+            color: #0d6efd;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .card-trabajando p {
+            margin: 4px 0;
+            font-size: 12px;
+            color: #475569;
+            line-height: 1.4;
+        }
+        .card-trabajando hr {
+            border: 0;
+            border-top: 1px solid #e2e8f0;
+            margin: 8px 0;
+        }
+        .piiu-container {
+            margin-top: 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .piiu-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .status-vigente {
+            background-color: #d1e7dd;
+            color: #0f5132;
+            border: 1px solid #badbcc;
+        }
+        .status-expirado {
+            background-color: #f8d7da;
+            color: #842029;
+            border: 1px solid #f5c2c7;
+        }
+        .btn-update {
+            width: 100%;
+            background-color: #ffc107;
+            color: #000000;
+            border: none;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+            transition: background-color 0.2s;
+        }
+        .btn-update:hover {
+            background-color: #e0a800;
+        }
+        .status-msg {
+            margin-top: 12px;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 13px;
+            display: none;
+        }
+        .status-success {
+            background-color: #d1e7dd;
+            color: #0f5132;
+            border: 1px solid #badbcc;
+        }
+        .status-error {
+            background-color: #f8d7da;
+            color: #842029;
+            border: 1px solid #f5c2c7;
+        }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h2>Actualizar Intervención</h2>
+        <h2>Actualizar intervención</h2>
     </div>
 
     <div class="form-group">
-        <label for="rutBuscar">Buscar por RUT o Nombre del NNA:</label>
-        <input type="text" id="rutBuscar" placeholder="Ej: 12.345.678-K o Juan">
+        <label for="selectPersona">Seleccionar NNA:</label>
+        <select id="selectPersona" onchange="alSeleccionarPersona()">
+            <option value="">-- Cargando casos... --</option>
+        </select>
     </div>
-    <button type="button" class="btn-search" onclick="buscarCaso()">🔍 Buscar Caso en Excel</button>
+
+    <!-- Cuadro Informativo: Estabas trabajando -->
+    <div id="cuadroTrabajando" style="display:none;" class="card-trabajando">
+        <h3>Estabas trabajando</h3>
+        <p><strong>Objetivo 1:</strong> <span id="displayObj1">-</span></p>
+        <p><strong>Objetivo 2:</strong> <span id="displayObj2">-</span></p>
+        <p><strong>Objetivo 3:</strong> <span id="displayObj3">-</span></p>
+        <hr>
+        <div class="piiu-container">
+            Estado PII-U: <span id="displayPiiU" class="piiu-badge"></span>
+        </div>
+    </div>
+
+    <form id="formActualizar" onsubmit="guardarDatosIntervencion(event)">
+        <div class="form-group">
+            <label for="etapa">Etapa de Intervención (Columna P):</label>
+            <select id="etapa">
+                <option value="">-- No cambiar --</option>
+                <option value="INGRESO">INGRESO</option>
+                <option value="DIAGNOSTICO">DIAGNOSTICO</option>
+                <option value="PLAN DE INTERVENCION">PLAN DE INTERVENCION</option>
+                <option value="EJECUCION">EJECUCION</option>
+                <option value="EVALUACION Y CIERRE">EVALUACION Y CIERRE</option>
+                <option value="EGRESADO">EGRESADO</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="fechaInicio">Fecha Inicio (Columna R):</label>
+            <input type="date" id="fechaInicio">
+        </div>
+
+        <div class="form-group">
+            <label for="fechaTermino">Fecha Término (Columna S):</label>
+            <input type="date" id="fechaTermino">
+        </div>
+
+        <div class="form-group">
+            <label for="obj1">Objetivo 1 (Columna X):</label>
+            <textarea id="obj1" rows="2" placeholder="Ingrese nuevo objetivo 1..."></textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="obj2">Objetivo 2 (Columna Y):</label>
+            <textarea id="obj2" rows="2" placeholder="Ingrese nuevo objetivo 2..."></textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="obj3">Objetivo 3 (Columna Z):</label>
+            <textarea id="obj3" rows="2" placeholder="Ingrese nuevo objetivo 3..."></textarea>
+        </div>
+
+        <button type="submit" class="btn-update">🔄 Actualizar Intervención</button>
+    </form>
 
     <div id="statusMsg" class="status-msg"></div>
 
-    <div id="formEdicion" style="display: none; margin-top: 15px;">
-        <div id="infoCaso" class="info-box"></div>
-
-        <form onsubmit="actualizarCaso(event)">
-            <div class="form-group">
-                <label for="nuevoEstado">Estado del Caso (Columna P):</label>
-                <select id="nuevoEstado" required>
-                    <option value="INGRESO">INGRESO</option>
-                    <option value="EN PROCESO">EN PROCESO</option>
-                    <option value="EGRESADO">EGRESADO</option>
-                    <option value="FINALIZADO">FINALIZADO</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="nuevaFechaInforme">Nueva Fecha Próximo Informe (Columna J):</label>
-                <input type="date" id="nuevaFechaInforme">
-            </div>
-
-            <button type="submit" class="btn-update">🔄 Guardar Cambios</button>
-        </form>
-    </div>
-
     <script>
-        let filaEncontrada = null;
-
         Office.onReady((info) => {
             if (info.host === Office.HostType.Excel) {
-                console.log("Office JS cargado para Actualizar Intervención.");
+                cargarListaPersonas();
             }
         });
 
+        // Formatear texto a "Nombre Propio"
+        function aNombrePropio(texto) {
+            if (!texto) return "";
+            return texto.toLowerCase().replace(/(^|\s)\S/g, function(letra) {
+                return letra.toUpperCase();
+            });
+        }
+
+        // Convertir fechas YYYY-MM-DD a DD/MM/YYYY
         function formatoFechaChile(fechaIso) {
             if (!fechaIso) return "";
             const p = fechaIso.split("-");
             return `${p[2]}/${p[1]}/${p[0]}`;
         }
 
-        async function buscarCaso() {
-            const busqueda = document.getElementById('rutBuscar').value.trim().toLowerCase();
-            if (!busqueda) {
-                mostrarStatus("Ingresa un RUT o Nombre para buscar.", "error");
-                return;
-            }
-
-            mostrarStatus("Buscando en la planilla...", "success");
-
+        // 1. Obtener la lista de personas desde la fila 4 que NO están EGRESADAS
+        async function cargarListaPersonas() {
+            mostrarStatus("Cargando lista de NNA...", "success");
             try {
                 await Excel.run(async (context) => {
                     const sheet = context.workbook.worksheets.getItem("ESTADO CASOS");
-                    const range = sheet.getRange("B3:E1000"); // B: Nombres, C: Ap. Paterno, E: RUT
-                    range.load(["values"]);
+                    const range = sheet.getRange("B4:P1000"); // B: Nombres, C: Paterno, D: Materno, P: Estado
+                    range.load("values");
                     await context.sync();
 
-                    filaEncontrada = null;
-                    let nombreCompleto = "";
-                    let rutEncontrado = "";
+                    const selectPersonas = document.getElementById('selectPersona');
+                    selectPersonas.innerHTML = '<option value="">-- Seleccione un NNA --</option>';
 
                     for (let i = 0; i < range.values.length; i++) {
-                        const nombre = String(range.values[i][0] || "");
-                        const apPaterno = String(range.values[i][1] || "");
-                        const rut = String(range.values[i][3] || "");
+                        const fila = i + 4;
+                        const rawNombre = String(range.values[i][0] || "").trim();
+                        const rawPaterno = String(range.values[i][1] || "").trim();
+                        const rawMaterno = String(range.values[i][2] || "").trim();
+                        const estadoP = String(range.values[i][14] || "").trim();
 
-                        if ((rut && rut.toLowerCase().includes(busqueda)) || (nombre && nombre.toLowerCase().includes(busqueda))) {
-                            filaEncontrada = 3 + i;
-                            nombreCompleto = `${nombre} ${apPaterno}`;
-                            rutEncontrado = rut;
-                            break;
-                        }
+                        if (!rawNombre || estadoP.toUpperCase() === "EGRESADO") continue;
+
+                        const primerNombre = rawNombre.split(" ")[0];
+                        const nombreFormateado = aNombrePropio(primerNombre);
+                        const paternoFormateado = aNombrePropio(rawPaterno);
+                        const maternoFormateado = aNombrePropio(rawMaterno);
+
+                        const nombreCompleto = `${nombreFormateado} ${paternoFormateado} ${maternoFormateado}`.trim();
+
+                        const option = document.createElement('option');
+                        option.value = fila;
+                        option.textContent = nombreCompleto;
+                        selectPersonas.appendChild(option);
                     }
 
-                    if (filaEncontrada) {
-                        document.getElementById('infoCaso').innerHTML = `<strong>NNA:</strong> ${nombreCompleto}<br><strong>RUT:</strong> ${rutEncontrado}<br><strong>Fila en Excel:</strong> ${filaEncontrada}`;
-                        document.getElementById('formEdicion').style.display = 'block';
-                        mostrarStatus("Caso localizado con éxito.", "success");
-                    } else {
-                        document.getElementById('formEdicion').style.display = 'none';
-                        mostrarStatus("No se encontró ningún caso que coincida.", "error");
-                    }
+                    mostrarStatus("Lista cargada correctamente.", "success");
                 });
             } catch (error) {
-                mostrarStatus("Error al buscar: " + error.message, "error");
+                mostrarStatus("Error al cargar lista: " + error.message, "error");
             }
         }
 
-        async function actualizarCaso(event) {
+        // 2. Obtener los objetivos actuales (X, Y, Z) y evaluar la Columna Q (PII-U)
+        async function alSeleccionarPersona() {
+            const numFila = parseInt(document.getElementById('selectPersona').value, 10);
+            if (!numFila) {
+                document.getElementById('cuadroTrabajando').style.display = 'none';
+                return;
+            }
+
+            try {
+                await Excel.run(async (context) => {
+                    const sheet = context.workbook.worksheets.getItem("ESTADO CASOS");
+                    
+                    const rangeQ = sheet.getRange(`Q${numFila}`);
+                    const rangeXYZ = sheet.getRange(`X${numFila}:Z${numFila}`);
+                    
+                    rangeQ.load("values");
+                    rangeXYZ.load("values");
+                    await context.sync();
+
+                    const obj1 = String(rangeXYZ.values[0][0] || "").trim() || "Nada aún";
+                    const obj2 = String(rangeXYZ.values[0][1] || "").trim() || "Nada aún";
+                    const obj3 = String(rangeXYZ.values[0][2] || "").trim() || "Nada aún";
+
+                    // Evaluar Columna Q (=SI(S14<HOY()-7; "Actualizar"; "Listo"))
+                    const valorQ = String(rangeQ.values[0][0] || "").trim().toLowerCase();
+                    let estadoPiiU = "";
+                    let clasePiiU = "";
+
+                    if (valorQ === "listo") {
+                        estadoPiiU = "PII-U vigente";
+                        clasePiiU = "status-vigente";
+                    } else if (valorQ === "actualizar") {
+                        estadoPiiU = "PII-U expirado";
+                        clasePiiU = "status-expirado";
+                    } else {
+                        estadoPiiU = "Sin información";
+                        clasePiiU = "";
+                    }
+
+                    // Renderizar en el cuadro "Estabas trabajando"
+                    document.getElementById('displayObj1').innerText = obj1;
+                    document.getElementById('displayObj2').innerText = obj2;
+                    document.getElementById('displayObj3').innerText = obj3;
+
+                    const elemPiiU = document.getElementById('displayPiiU');
+                    elemPiiU.innerText = estadoPiiU;
+                    elemPiiU.className = "piiu-badge " + clasePiiU;
+
+                    document.getElementById('cuadroTrabajando').style.display = 'block';
+                });
+            } catch (error) {
+                mostrarStatus("Error al cargar datos del caso: " + error.message, "error");
+            }
+        }
+
+        // 3. Guardar cambios en la hoja "ESTADO CASOS"
+        async function guardarDatosIntervencion(event) {
             event.preventDefault();
-            if (!filaEncontrada) return;
+            
+            const fila = parseInt(document.getElementById('selectPersona').value, 10);
+            if (!fila) {
+                mostrarStatus("Debe seleccionar a una persona válida.", "error");
+                return;
+            }
 
-            mostrarStatus("Actualizando datos...", "success");
+            mostrarStatus("Guardando cambios...", "success");
 
-            const estado = document.getElementById('nuevoEstado').value;
-            const fechaInfRaw = document.getElementById('nuevaFechaInforme').value;
+            const etapa = document.getElementById('etapa').value;
+            const fechaInicioRaw = document.getElementById('fechaInicio').value;
+            const fechaTerminoRaw = document.getElementById('fechaTermino').value;
+            const obj1 = document.getElementById('obj1').value.trim();
+            const obj2 = document.getElementById('obj2').value.trim();
+            const obj3 = document.getElementById('obj3').value.trim();
 
             try {
                 await Excel.run(async (context) => {
                     const sheet = context.workbook.worksheets.getItem("ESTADO CASOS");
 
-                    // Actualizar Columna P (Estado)
-                    sheet.getRange(`P${filaEncontrada}`).values = [[estado]];
-
-                    // Si se ingresó una nueva fecha en Columna J
-                    if (fechaInfRaw) {
-                        const fechaFormatted = formatoFechaChile(fechaInfRaw);
-                        sheet.getRange(`J${filaEncontrada}`).numberFormat = [["dd/mm/yyyy"]];
-                        sheet.getRange(`J${filaEncontrada}`).values = [[fechaFormatted]];
+                    // Columna P: Etapa de Intervención
+                    if (etapa) {
+                        sheet.getRange(`P${fila}`).values = [[etapa]];
                     }
+
+                    // Columna R: Fecha Inicio
+                    if (fechaInicioRaw) {
+                        const fInicio = formatoFechaChile(fechaInicioRaw);
+                        sheet.getRange(`R${fila}`).numberFormat = [["dd/mm/yyyy"]];
+                        sheet.getRange(`R${fila}`).values = [[fInicio]];
+                    }
+
+                    // Columna S: Fecha Término
+                    if (fechaTerminoRaw) {
+                        const fTermino = formatoFechaChile(fechaTerminoRaw);
+                        sheet.getRange(`S${fila}`).numberFormat = [["dd/mm/yyyy"]];
+                        sheet.getRange(`S${fila}`).values = [[fTermino]];
+                    }
+
+                    // Columnas X, Y, Z: Objetivos
+                    if (obj1 !== "") sheet.getRange(`X${fila}`).values = [[obj1]];
+                    if (obj2 !== "") sheet.getRange(`Y${fila}`).values = [[obj2]];
+                    if (obj3 !== "") sheet.getRange(`Z${fila}`).values = [[obj3]];
 
                     await context.sync();
                 });
 
-                mostrarStatus("¡Intervención actualizada correctamente!", "success");
-                document.getElementById('formEdicion').style.display = 'none';
-                document.getElementById('rutBuscar').value = "";
+                mostrarStatus("Intervención actualizada exitosamente.", "success");
+                document.getElementById('formActualizar').reset();
+                document.getElementById('cuadroTrabajando').style.display = 'none';
+                cargarListaPersonas(); // Recargar listado
             } catch (error) {
-                mostrarStatus("Error al actualizar: " + error.message, "error");
+                mostrarStatus("Error al guardar: " + error.message, "error");
             }
         }
 
