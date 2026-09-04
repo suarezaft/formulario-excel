@@ -1,434 +1,136 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestión NNA</title>
-    <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
-    <style>
-        * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
-        body { margin: 0; padding: 12px; background-color: #f8f9fa; color: #212529; }
-        
-        /* Navegación por pestañas */
-        .tab-nav {
-            display: flex;
-            border-bottom: 2px solid #dee2e6;
-            margin-bottom: 16px;
-        }
-        .tab-btn {
-            flex: 1;
-            padding: 10px;
-            background: none;
-            border: none;
-            font-weight: 600;
-            font-size: 13px;
-            color: #6c757d;
-            cursor: pointer;
-            border-bottom: 3px solid transparent;
-        }
-        .tab-btn.active {
-            color: #1b4332;
-            border-bottom-color: #1b4332;
-        }
-        
-        /* Contenedores de vista */
-        .view-content { display: none; }
-        .view-content.active { display: block; }
+<?xml version="1.0" encoding="UTF-8"?>
+<OfficeApp
+    xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0"
+    xsi:type="TaskPaneApp">
 
-        /* Botón Portapapeles */
-        .btn-clipboard {
-            width: 100%;
-            background-color: #198754;
-            color: white;
-            border: none;
-            padding: 10px;
-            border-radius: 4px;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            margin-bottom: 14px;
-        }
+  <Id>b29f9872-3c1a-4d2a-8723-9876543210ab</Id>
+  <Version>1.0.0.1</Version>
+  <ProviderName>La Protectora</ProviderName>
+  <DefaultLocale>es-ES</DefaultLocale>
 
-        /* Estilos generales de formulario */
-        .form-group { margin-bottom: 12px; }
-        label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px; }
-        input, select, textarea { width: 100%; padding: 8px; border: 1px solid #ced4da; border-radius: 4px; font-size: 13px; }
-        
-        .btn-primary { width: 100%; padding: 10px; background-color: #0d6efd; color: white; border: none; border-radius: 4px; font-weight: 600; cursor: pointer; margin-top: 10px; }
-        .btn-warning { width: 100%; padding: 10px; background-color: #ffc107; color: black; border: none; border-radius: 4px; font-weight: 600; cursor: pointer; margin-top: 10px; }
-        
-        /* Tarjeta Estado PII-U */
-        .card-trabajando { background: #ffffff; border: 1px solid #cbd5e1; border-left: 4px solid #0d6efd; padding: 10px; border-radius: 4px; margin-bottom: 12px; font-size: 12px; }
-        .piiu-badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 700; }
-        .status-vigente { background-color: #d1e7dd; color: #0f5132; }
-        .status-expirado { background-color: #f8d7da; color: #842029; }
-        
-        .status-msg { margin-top: 10px; padding: 8px; border-radius: 4px; font-size: 12px; display: none; }
-        .status-success { background-color: #d1e7dd; color: #0f5132; }
-        .status-error { background-color: #f8d7da; color: #842029; }
-    </style>
-</head>
-<body>
+  <DisplayName DefaultValue="Gestión NNA" />
+  <Description DefaultValue="Complemento para la gestión y seguimiento de casos NNA." />
 
-    <!-- Navegación por pestañas superiores -->
-    <div class="tab-nav">
-        <button class="tab-btn active" onclick="cambiarVista('v-ingreso', this)">➕ Nuevo Ingreso</button>
-        <button class="tab-btn" onclick="cambiarVista('v-actualizar', this); cargarListaPersonas();">🔄 Actualizar Caso</button>
-    </div>
+  <IconUrl DefaultValue="https://appsforoffice.microsoft.com/fabric/assets/icons/excel-32x32.png" />
+  <SupportUrl DefaultValue="https://www.laprotectora.cl" />
 
-    <!-- VISTA 1: NUEVO INGRESO (TODOS LOS CAMPOS RESTAURADOS) -->
-    <div id="v-ingreso" class="view-content active">
-        <button type="button" class="btn-clipboard" onclick="pegarPortapapeles()">
-            📋 Pegar Ficha desde Portapapeles
-        </button>
+  <AppDomains>
+    <AppDomain>https://suarezaft.github.io</AppDomain>
+  </AppDomains>
 
-        <form id="formIngreso" onsubmit="guardarIngreso(event)">
-            <div class="form-group">
-                <label for="dupla">Equipo integrado:</label>
-                <select id="dupla" required>
-                    <option value="Mariana / Claudia (M/C)">Mariana / Claudia (M/C)</option>
-                    <option value="Liliana / Claudia (L/C)">Liliana / Claudia (L/C)</option>
-                </select>
-            </div>
+  <Hosts>
+    <Host Name="Workbook" />
+  </Hosts>
 
-            <div class="form-group">
-                <label for="nombres">Nombres:</label>
-                <input type="text" id="nombres" placeholder="Ingrese nombres" required>
-            </div>
+  <DefaultSettings>
+    <SourceLocation DefaultValue="https://suarezaft.github.io/formulario-excel/taskpane-ingreso.html" />
+  </DefaultSettings>
 
-            <div class="form-group">
-                <label for="apellidoPaterno">Apellido paterno:</label>
-                <input type="text" id="apellidoPaterno" placeholder="Ingrese apellido paterno" required>
-            </div>
+  <Permissions>ReadWriteDocument</Permissions>
 
-            <div class="form-group">
-                <label for="apellidoMaterno">Apellido materno:</label>
-                <input type="text" id="apellidoMaterno" placeholder="Ingrese apellido materno" required>
-            </div>
+  <VersionOverrides
+      xmlns="http://schemas.microsoft.com/office/taskpaneappversionoverrides"
+      xsi:type="VersionOverridesV1_0">
 
-            <div class="form-group">
-                <label for="rut">Cédula de Identidad (RUT):</label>
-                <input type="text" id="rut" placeholder="12.345.678-K" required>
-            </div>
+    <Hosts>
+      <Host xsi:type="Workbook">
 
-            <div class="form-group">
-                <label for="rit">RIT (X-123-AAAA):</label>
-                <input type="text" id="rit" placeholder="X-123-2026" required>
-            </div>
+        <DesktopFormFactor>
 
-            <div class="form-group">
-                <label for="fechaNacimiento">Fecha de nacimiento:</label>
-                <input type="date" id="fechaNacimiento" required>
-            </div>
+          <ExtensionPoint xsi:type="PrimaryCommandSurface">
 
-            <div class="form-group">
-                <label for="fechaIngreso">Fecha de ingreso:</label>
-                <input type="date" id="fechaIngreso" required>
-            </div>
+            <CustomTab id="TabGestionNNA">
 
-            <div class="form-group">
-                <label for="direccion">Dirección:</label>
-                <input type="text" id="direccion" placeholder="Calle, número, comuna" required>
-            </div>
+              <Group id="GroupGestionNNA">
 
-            <div class="form-group">
-                <label for="cesfam">CESFAM / Centro de Salud:</label>
-                <input type="text" id="cesfam" placeholder="CESFAM Cartagena">
-            </div>
+                <Label resid="GroupLabel" />
 
-            <div class="form-group">
-                <label for="colegio">Colegio / Establecimiento:</label>
-                <input type="text" id="colegio" placeholder="Nombre del colegio">
-            </div>
+                <Icon>
+                  <bt:Image size="16" resid="Icon16" />
+                  <bt:Image size="32" resid="Icon32" />
+                  <bt:Image size="80" resid="Icon80" />
+                </Icon>
 
-            <button type="submit" class="btn-primary">💾 Guardar Ingreso en Excel</button>
-        </form>
-    </div>
+                <!-- Botón 1: Nuevo Ingreso -->
+                <Control xsi:type="Button" id="ButtonNuevoIngreso">
+                  <Label resid="BtnIngresoLabel" />
+                  <Supertip>
+                    <Title resid="SuperIngresoTitle" />
+                    <Description resid="SuperIngresoDesc" />
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon16" />
+                    <bt:Image size="32" resid="Icon32" />
+                    <bt:Image size="80" resid="Icon80" />
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>TaskpaneIngreso</TaskpaneId>
+                    <SourceLocation resid="TaskpaneIngreso.Url" />
+                  </Action>
+                </Control>
 
-    <!-- VISTA 2: ACTUALIZAR INTERVENCIÓN -->
-    <div id="v-actualizar" class="view-content">
-        <h3>Actualizar Intervención</h3>
-        <div class="form-group">
-            <label for="selectPersona">Seleccionar NNA:</label>
-            <select id="selectPersona" onchange="alSeleccionarPersona()">
-                <option value="">-- Cargar lista... --</option>
-            </select>
-        </div>
+                <!-- Botón 2: Actualizar Intervención -->
+                <Control xsi:type="Button" id="ButtonActualizarIntervencion">
+                  <Label resid="BtnActualizarLabel" />
+                  <Supertip>
+                    <Title resid="SuperActualizarTitle" />
+                    <Description resid="SuperActualizarDesc" />
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon16" />
+                    <bt:Image size="32" resid="Icon32" />
+                    <bt:Image size="80" resid="Icon80" />
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>TaskpaneActualizar</TaskpaneId>
+                    <SourceLocation resid="TaskpaneActualizar.Url" />
+                  </Action>
+                </Control>
 
-        <div id="cuadroTrabajando" style="display:none;" class="card-trabajando">
-            <strong>Objetivo 1:</strong> <span id="displayObj1">-</span><br>
-            <strong>Objetivo 2:</strong> <span id="displayObj2">-</span><br>
-            <strong>Objetivo 3:</strong> <span id="displayObj3">-</span><br>
-            <div style="margin-top:6px;">
-                Estado PII-U: <span id="displayPiiU" class="piiu-badge"></span>
-            </div>
-        </div>
+              </Group>
 
-        <form onsubmit="guardarDatosIntervencion(event)">
-            <div class="form-group">
-                <label for="etapa">Etapa (Columna P):</label>
-                <select id="etapa">
-                    <option value="">-- No cambiar --</option>
-                    <option value="INGRESO">INGRESO</option>
-                    <option value="DIAGNOSTICO">DIAGNOSTICO</option>
-                    <option value="PLAN DE INTERVENCION">PLAN DE INTERVENCION</option>
-                    <option value="EJECUCION">EJECUCION</option>
-                    <option value="EVALUACION Y CIERRE">EVALUACION Y CIERRE</option>
-                    <option value="EGRESADO">EGRESADO</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Fecha Inicio (Columna R):</label>
-                <input type="date" id="fechaInicio">
-            </div>
-            <div class="form-group">
-                <label>Fecha Término (Columna S):</label>
-                <input type="date" id="fechaTermino">
-            </div>
-            <div class="form-group">
-                <label>Objetivo 1 (Columna X):</label>
-                <textarea id="obj1" rows="2"></textarea>
-            </div>
-            <div class="form-group">
-                <label>Objetivo 2 (Columna Y):</label>
-                <textarea id="obj2" rows="2"></textarea>
-            </div>
-            <div class="form-group">
-                <label>Objetivo 3 (Columna Z):</label>
-                <textarea id="obj3" rows="2"></textarea>
-            </div>
-            <button type="submit" class="btn-warning">Actualizar Intervención</button>
-        </form>
-    </div>
+              <Label resid="TabLabel" />
 
-    <div id="statusMsg" class="status-msg"></div>
+            </CustomTab>
 
-    <script>
-        Office.onReady(() => {});
+          </ExtensionPoint>
 
-        function cambiarVista(vistaId, btn) {
-            document.querySelectorAll('.view-content').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-            document.getElementById(vistaId).classList.add('active');
-            btn.classList.add('active');
-            ocultarStatus();
-        }
+        </DesktopFormFactor>
 
-        function aNombrePropio(txt) {
-            return txt ? txt.toLowerCase().replace(/(^|\s)\S/g, l => l.toUpperCase()) : "";
-        }
+      </Host>
+    </Hosts>
 
-        function formatoFechaChile(fechaIso) {
-            if (!fechaIso) return "";
-            const p = fechaIso.split("-");
-            return `${p[2]}/${p[1]}/${p[0]}`;
-        }
+    <Resources>
 
-        // --- LÓGICA DE NUEVO INGRESO (CON TODAS LAS COLUMNAS Y FÓRMULAS) ---
-        async function guardarIngreso(event) {
-            event.preventDefault();
-            mostrarStatus("Guardando registro...", "success");
+      <bt:Images>
+        <bt:Image id="Icon16" DefaultValue="https://appsforoffice.microsoft.com/fabric/assets/icons/excel-16x16.png" />
+        <bt:Image id="Icon32" DefaultValue="https://appsforoffice.microsoft.com/fabric/assets/icons/excel-32x32.png" />
+        <bt:Image id="Icon80" DefaultValue="https://appsforoffice.microsoft.com/fabric/assets/icons/excel-80x80.png" />
+      </bt:Images>
 
-            const dupla = document.getElementById('dupla').value;
-            const nombres = document.getElementById('nombres').value;
-            const apellidoPaterno = document.getElementById('apellidoPaterno').value;
-            const apellidoMaterno = document.getElementById('apellidoMaterno').value;
-            const rut = document.getElementById('rut').value;
-            const rit = document.getElementById('rit').value;
-            const fechaNacimiento = document.getElementById('fechaNacimiento').value;
-            const fechaIngreso = document.getElementById('fechaIngreso').value;
-            const direccion = document.getElementById('direccion').value;
-            const cesfam = document.getElementById('cesfam').value || "";
-            const colegio = document.getElementById('colegio').value || "";
+      <bt:Urls>
+        <bt:Url id="TaskpaneIngreso.Url" DefaultValue="https://suarezaft.github.io/formulario-excel/taskpane-ingreso.html" />
+        <bt:Url id="TaskpaneActualizar.Url" DefaultValue="https://suarezaft.github.io/formulario-excel/taskpane-actualizar.html" />
+      </bt:Urls>
 
-            try {
-                await Excel.run(async (context) => {
-                    const sheet = context.workbook.worksheets.getItem("ESTADO CASOS");
-                    
-                    const rangeD = sheet.getRange("D3:D1000");
-                    rangeD.load("values");
-                    await context.sync();
+      <bt:ShortStrings>
+        <bt:String id="GroupLabel" DefaultValue="Gestión de Casos" />
+        <bt:String id="TabLabel" DefaultValue="La Protectora" />
+        <bt:String id="BtnIngresoLabel" DefaultValue="Nuevo Ingreso" />
+        <bt:String id="SuperIngresoTitle" DefaultValue="Registrar Nuevo Ingreso" />
+        <bt:String id="BtnActualizarLabel" DefaultValue="Actualizar Intervención" />
+        <bt:String id="SuperActualizarTitle" DefaultValue="Actualizar Caso" />
+      </bt:ShortStrings>
 
-                    let ultimaFila = 3;
-                    for (let i = 0; i < rangeD.values.length; i++) {
-                        if (rangeD.values[i][0] !== "") {
-                            ultimaFila = 3 + i + 1;
-                        }
-                    }
+      <bt:LongStrings>
+        <bt:String id="SuperIngresoDesc" DefaultValue="Abre el formulario para ingresar un nuevo NNA." />
+        <bt:String id="SuperActualizarDesc" DefaultValue="Abre el panel para modificar las intervenciones del NNA." />
+      </bt:LongStrings>
 
-                    const row = ultimaFila;
-                    let primerNombre = nombres.trim().split(" ")[0];
-                    primerNombre = primerNombre ? primerNombre.charAt(0).toUpperCase() + primerNombre.slice(1).toLowerCase() : "";
+    </Resources>
 
-                    sheet.getRange(`A${row}`).values = [[dupla]];
-                    sheet.getRange(`B${row}`).values = [[nombres]];
-                    sheet.getRange(`C${row}`).values = [[apellidoPaterno]];
-                    sheet.getRange(`D${row}`).values = [[apellidoMaterno]];
-                    sheet.getRange(`E${row}`).values = [[rut]];
-                    sheet.getRange(`F${row}`).values = [[rit]];
-                    sheet.getRange(`H${row}`).values = [[fechaNacimiento]];
-                    sheet.getRange(`I${row}`).values = [[fechaIngreso]];
-                    sheet.getRange(`L${row}`).values = [[direccion]];
-                    sheet.getRange(`M${row}`).values = [[cesfam]];
-                    sheet.getRange(`N${row}`).values = [[colegio]];
+  </VersionOverrides>
 
-                    // Fórmulas originales
-                    sheet.getRange(`G${row}`).formulas = [[`=SI.ERROR(DIFFECHA(H${row}; HOY(); "Y") & " años"; "")`]];
-                    sheet.getRange(`J${row}`).formulas = [[`=SI(O(P${row}="EGRESADO"; DIFFECHA(I${row}; HOY(); "M") >= 24); "Finalizado"; FECHA.MES(I${row}; (INT((DIFFECHA(I${row}; HOY(); "M")) / 3) + 1) * 3))`]];
-                    sheet.getRange(`P${row}`).values = [["INGRESO"]];
-                    sheet.getRange(`Q${row}`).formulas = [[`=SI(S${row}<HOY()-7; "Actualizar"; "Listo")`]];
-                    sheet.getRange(`R${row}`).formulas = [[`=I${row}`]];
-                    sheet.getRange(`S${row}`).formulas = [[`=FECHA.MES(I${row}; 1)`]];
-                    sheet.getRange(`X${row}`).values = [[`Generar conocimiento de las redes en las cuales se encuentra inserto ${primerNombre} y su familia...`]];
-                    sheet.getRange(`Y${row}`).values = [[`Desarrollar y fortalecer espacios de participación...`]];
-
-                    await context.sync();
-                });
-
-                mostrarStatus("¡Ingreso guardado con éxito en Excel!", "success");
-                document.getElementById('formIngreso').reset();
-            } catch (error) {
-                console.error(error);
-                mostrarStatus("Error al guardar: " + error.message, "error");
-            }
-        }
-
-        async function pegarPortapapeles() {
-            try {
-                const text = await navigator.clipboard.readText();
-                if (!text) {
-                    alert("El portapapeles está vacío.");
-                    return;
-                }
-                alert("Ficha leída desde el portapapeles.");
-            } catch (err) {
-                alert("Para pegar la ficha, asegúrate de dar permisos de portapapeles al navegador.");
-            }
-        }
-
-        // --- LÓGICA DE ACTUALIZACIÓN ---
-        async function cargarListaPersonas() {
-            try {
-                await Excel.run(async (context) => {
-                    const sheet = context.workbook.worksheets.getItem("ESTADO CASOS");
-                    const range = sheet.getRange("B4:P1000");
-                    range.load("values");
-                    await context.sync();
-
-                    const select = document.getElementById('selectPersona');
-                    select.innerHTML = '<option value="">-- Seleccione un NNA --</option>';
-
-                    for (let i = 0; i < range.values.length; i++) {
-                        const fila = i + 4;
-                        const nom = String(range.values[i][0] || "").trim();
-                        const pat = String(range.values[i][1] || "").trim();
-                        const mat = String(range.values[i][2] || "").trim();
-                        const est = String(range.values[i][14] || "").trim();
-
-                        if (!nom || est.toUpperCase() === "EGRESADO") continue;
-
-                        const nombreFormateado = `${aNombrePropio(nom.split(" ")[0])} ${aNombrePropio(pat)} ${aNombrePropio(mat)}`.trim();
-                        const opt = document.createElement('option');
-                        opt.value = fila;
-                        opt.textContent = nombreFormateado;
-                        select.appendChild(opt);
-                    }
-                });
-            } catch (err) {
-                mostrarStatus("Error cargando lista: " + err.message, "error");
-            }
-        }
-
-        async function alSeleccionarPersona() {
-            const fila = parseInt(document.getElementById('selectPersona').value, 10);
-            if (!fila) {
-                document.getElementById('cuadroTrabajando').style.display = 'none';
-                return;
-            }
-            try {
-                await Excel.run(async (context) => {
-                    const sheet = context.workbook.worksheets.getItem("ESTADO CASOS");
-                    const rangeQ = sheet.getRange(`Q${fila}`);
-                    const rangeXYZ = sheet.getRange(`X${fila}:Z${fila}`);
-                    rangeQ.load("values");
-                    rangeXYZ.load("values");
-                    await context.sync();
-
-                    document.getElementById('displayObj1').innerText = String(rangeXYZ.values[0][0] || "").trim() || "Sin registrar";
-                    document.getElementById('displayObj2').innerText = String(rangeXYZ.values[0][1] || "").trim() || "Sin registrar";
-                    document.getElementById('displayObj3').innerText = String(rangeXYZ.values[0][2] || "").trim() || "Sin registrar";
-
-                    const valQ = String(rangeQ.values[0][0] || "").trim().toLowerCase();
-                    const badge = document.getElementById('displayPiiU');
-                    
-                    if (valQ === "listo") {
-                        badge.innerText = "PII-U vigente";
-                        badge.className = "piiu-badge status-vigente";
-                    } else {
-                        badge.innerText = "PII-U expirado";
-                        badge.className = "piiu-badge status-expirado";
-                    }
-                    document.getElementById('cuadroTrabajando').style.display = 'block';
-                });
-            } catch (err) {
-                mostrarStatus("Error leyendo caso: " + err.message, "error");
-            }
-        }
-
-        async function guardarDatosIntervencion(e) {
-            e.preventDefault();
-            const fila = parseInt(document.getElementById('selectPersona').value, 10);
-            if (!fila) return mostrarStatus("Seleccione un NNA primero.", "error");
-
-            mostrarStatus("Guardando cambios...", "success");
-            try {
-                await Excel.run(async (context) => {
-                    const sheet = context.workbook.worksheets.getItem("ESTADO CASOS");
-
-                    const etapa = document.getElementById('etapa').value;
-                    const fIni = document.getElementById('fechaInicio').value;
-                    const fTer = document.getElementById('fechaTermino').value;
-                    const o1 = document.getElementById('obj1').value.trim();
-                    const o2 = document.getElementById('obj2').value.trim();
-                    const o3 = document.getElementById('obj3').value.trim();
-
-                    if (etapa) sheet.getRange(`P${fila}`).values = [[etapa]];
-                    if (fIni) {
-                        sheet.getRange(`R${fila}`).numberFormat = [["dd/mm/yyyy"]];
-                        sheet.getRange(`R${fila}`).values = [[formatoFechaChile(fIni)]];
-                    }
-                    if (fTer) {
-                        sheet.getRange(`S${fila}`).numberFormat = [["dd/mm/yyyy"]];
-                        sheet.getRange(`S${fila}`).values = [[formatoFechaChile(fTer)]];
-                    }
-                    if (o1) sheet.getRange(`X${fila}`).values = [[o1]];
-                    if (o2) sheet.getRange(`Y${fila}`).values = [[o2]];
-                    if (o3) sheet.getRange(`Z${fila}`).values = [[o3]];
-
-                    await context.sync();
-                });
-                mostrarStatus("Intervención actualizada.", "success");
-                e.target.reset();
-                document.getElementById('cuadroTrabajando').style.display = 'none';
-                cargarListaPersonas();
-            } catch (err) {
-                mostrarStatus("Error al guardar: " + err.message, "error");
-            }
-        }
-
-        function mostrarStatus(m, t) {
-            const el = document.getElementById('statusMsg');
-            el.innerText = m;
-            el.className = "status-msg " + (t === "success" ? "status-success" : "status-error");
-            el.style.display = "block";
-        }
-        function ocultarStatus() {
-            document.getElementById('statusMsg').style.display = "none";
-        }
-    </script>
-</body>
-</html>
+</OfficeApp>
