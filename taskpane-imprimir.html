@@ -12,7 +12,6 @@
         label { font-weight: bold; display: block; margin-bottom: 4px; }
         input[type="text"], input[type="date"], select { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-family: inherit; }
         
-        /* Estilos para los selectores de hora y minutos */
         .hora-container { display: flex; align-items: center; gap: 4px; }
         .hora-grupo { display: flex; align-items: center; gap: 2px; flex: 1; }
         .hora-grupo select { padding: 6px 2px; text-align: center; }
@@ -24,17 +23,21 @@
         .btn-imprimir { width: 100%; background-color: #0078d4; color: white; border: none; padding: 12px; font-size: 14px; font-weight: bold; cursor: pointer; border-radius: 4px; margin-top: 15px; }
         .btn-imprimir:hover { background-color: #005a9e; }
         .oculto { display: none; }
-        .error { color: #d13438; font-size: 11px; margin-top: 4px; display: none; }
+        .error { color: #d13438; font-size: 11px; margin-top: 4px; display: block; word-break: break-all; }
+        .success-status { color: #107c41; font-size: 11px; font-weight: bold; }
     </style>
 </head>
 <body>
     <h3>Certificado de Atención</h3>
 
+    <!-- Status / Error Debug Console -->
+    <div id="msgStatus" class="campo"></div>
+
     <!-- 1. Menú Desplegable NNA -->
     <div class="campo">
         <label for="selectNNA">Seleccionar NNA:</label>
         <select id="selectNNA" onchange="actualizarClasificacionEdad()">
-            <option value="">Cargando lista desde ESTADO CASOS...</option>
+            <option value="">Cargando lista...</option>
         </select>
     </div>
 
@@ -53,7 +56,6 @@
     <div class="campo">
         <label>Hora de Atención:</label>
         <div class="hora-container">
-            <!-- Hora Inicio -->
             <div class="hora-grupo">
                 <select id="hInicio">
                     <option value="08">08</option>
@@ -79,7 +81,6 @@
 
             <span class="hora-separador">a</span>
 
-            <!-- Hora Fin -->
             <div class="hora-grupo">
                 <select id="hFin">
                     <option value="08">08</option>
@@ -109,7 +110,7 @@
     <div class="campo">
         <label for="txtAcompanante">¿Con quién vino a atención? *</label>
         <input type="text" id="txtAcompanante" placeholder="Ej: Madre, Padre, Tutor legal" />
-        <span id="errAcompanante" class="error">Este campo es obligatorio</span>
+        <span id="errAcompanante" class="error oculto">Este campo es obligatorio</span>
     </div>
 
     <!-- 6. Casilla opcional: Dónde se presentará -->
@@ -140,26 +141,46 @@
 
         document.addEventListener("DOMContentLoaded", () => {
             const inputFecha = document.getElementById("dtFecha");
-            if (inputFecha) {
-                inputFecha.value = obtenerFechaHoyISO();
+            if (inputFecha) inputFecha.value = obtenerFechaHoyISO();
+        });
+
+        Office.onReady((info) => {
+            if (info.host === Office.HostType.Excel) {
+                cargarDatosEstadoCasos();
+            } else {
+                mostrarError("Este complemento debe ser ejecutado dentro de Microsoft Excel.");
             }
         });
 
-        Office.onReady(() => {
-            const inputFecha = document.getElementById("dtFecha");
-            if (inputFecha && !inputFecha.value) {
-                inputFecha.value = obtenerFechaHoyISO();
-            }
-
-            cargarDatosEstadoCasos();
-        });
+        function mostrarError(mensaje) {
+            const divStatus = document.getElementById("msgStatus");
+            divStatus.innerHTML = `<span class="error">⚠️ ${mensaje}</span>`;
+            const combo = document.getElementById("selectNNA");
+            combo.innerHTML = '<option value="">-- Error al cargar --</option>';
+        }
 
         async function cargarDatosEstadoCasos() {
             try {
                 await Excel.run(async (context) => {
-                    // Acceso a la hoja "ESTADO CASOS"
-                    const sheet = context.workbook.worksheets.getItem("ESTADO CASOS");
-                    
+                    const worksheets = context.workbook.worksheets;
+                    worksheets.load("items/name");
+                    await context.sync();
+
+                    // Búsqueda flexible de la pestaña "ESTADO CASOS"
+                    let sheet = null;
+                    for (let i = 0; i < worksheets.items.length; i++) {
+                        if (worksheets.items[i].name.trim().toUpperCase() === "ESTADO CASOS") {
+                            sheet = worksheets.items[i];
+                            break;
+                        }
+                    }
+
+                    if (!sheet) {
+                        mostrarError('No se encontró la pestaña "ESTADO CASOS" en el libro de Excel.');
+                        return;
+                    }
+
+                    // Cargar las celdas desde la fila 2 a la 500
                     const rangeNombres = sheet.getRange("B2:D500");
                     const rangeEdades = sheet.getRange("G2:G500");
                     const rangeEstados = sheet.getRange("P2:P500");
@@ -181,7 +202,8 @@
                         const edadVal = rangeEdades.values[i][0];
                         const estado = rangeEstados.values[i][0];
 
-                        if (nombre && String(estado).trim().toUpperCase() !== "EGRESADO") {
+                        // Si hay nombre y el estado NO es EGRESADO
+                        if (nombre && String(nombre).trim() !== "" && String(estado).trim().toUpperCase() !== "EGRESADO") {
                             const nomPropio = `${nombre} ${apPaterno || ''} ${apMaterno || ''}`.replace(/\s+/g, ' ').trim();
                             
                             const edadNum = parseFloat(edadVal) || 0;
@@ -198,9 +220,14 @@
                             combo.appendChild(opt);
                         }
                     }
+
+                    if (listaNNAs.length === 0) {
+                        combo.innerHTML = '<option value="">No se encontraron registros activos</option>';
+                    }
                 });
             } catch (error) {
-                console.error("Error al cargar la lista de NNA desde ESTADO CASOS:", error);
+                console.error("Error al cargar datos:", error);
+                mostrarError("Error al conectar con Excel: " + (error.message || error));
             }
         }
 
@@ -227,10 +254,10 @@
             const errAcom = document.getElementById("errAcompanante");
 
             if (!acompanante) {
-                errAcom.style.display = "block";
+                errAcom.classList.remove("oculto");
                 return;
             } else {
-                errAcom.style.display = "none";
+                errAcom.classList.add("oculto");
             }
 
             if (select.value === "") {
@@ -240,12 +267,10 @@
 
             const nnaSeleccionado = listaNNAs[select.value];
             
-            // Fecha
             const rawFecha = document.getElementById("dtFecha").value || obtenerFechaHoyISO();
             const partes = rawFecha.split("-");
             const fechaFormateada = `${partes[2]}/${partes[1]}/${partes[0]}`;
 
-            // Construcción del formato HH:MM
             const horaInicio = `${document.getElementById("hInicio").value}:${document.getElementById("mInicio").value}`;
             const horaFin = `${document.getElementById("hFin").value}:${document.getElementById("mFin").value}`;
 
@@ -256,20 +281,33 @@
 
             try {
                 await Excel.run(async (context) => {
-                    const sheetCert = context.workbook.worksheets.getItem("Certif. Atención");
+                    const worksheets = context.workbook.worksheets;
+                    worksheets.load("items/name");
+                    await context.sync();
 
-                    // Rellenar celdas auxiliares en "Certif. Atención"
+                    let sheetCert = null;
+                    for (let i = 0; i < worksheets.items.length; i++) {
+                        if (worksheets.items[i].name.trim().toUpperCase() === "CERTIF. ATENCIÓN") {
+                            sheetCert = worksheets.items[i];
+                            break;
+                        }
+                    }
+
+                    if (!sheetCert) {
+                        alert('No se encontró la pestaña "Certif. Atención" para escribir los datos.');
+                        return;
+                    }
+
+                    // Escribir datos
                     sheetCert.getRange("G2").values = [[nnaSeleccionado.nomPropio]];     
                     sheetCert.getRange("H2").values = [[nnaSeleccionado.clasificacion]]; 
                     sheetCert.getRange("I2").values = [[fechaFormateada]];              
                     sheetCert.getRange("G4").values = [[acompanante]];                  
                     sheetCert.getRange("H3").values = [[presentarEn]]; 
-                    
-                    // Horas de atención
-                    sheetCert.getRange("G5").values = [[horaInicio]]; // Hora Inicio
-                    sheetCert.getRange("H5").values = [[horaFin]];    // Hora Fin
+                    sheetCert.getRange("G5").values = [[horaInicio]]; 
+                    sheetCert.getRange("H5").values = [[horaFin]];    
 
-                    // Configurar área de impresión (columnas A:F)
+                    // Configurar área de impresión
                     sheetCert.pageLayout.setPrintArea("A:F");
                     sheetCert.pageLayout.fitToPagesWide = 1;
                     sheetCert.pageLayout.fitToPagesTall = 0;
@@ -278,11 +316,10 @@
                     await context.sync();
                 });
 
-                // Abrir ventana de impresión nativa
                 window.print();
 
             } catch (error) {
-                console.error("Error al escribir celdas e imprimir:", error);
+                alert("Error al intentar actualizar la hoja: " + error.message);
             }
         }
     </script>
