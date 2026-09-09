@@ -24,13 +24,11 @@
         .btn-imprimir:hover { background-color: #005a9e; }
         .oculto { display: none; }
         .error { color: #d13438; font-size: 11px; margin-top: 4px; display: block; word-break: break-all; }
-        .success-status { color: #107c41; font-size: 11px; font-weight: bold; }
     </style>
 </head>
 <body>
     <h3>Certificado de Atención</h3>
 
-    <!-- Status / Error Debug Console -->
     <div id="msgStatus" class="campo"></div>
 
     <!-- 1. Menú Desplegable NNA -->
@@ -148,7 +146,7 @@
             if (info.host === Office.HostType.Excel) {
                 cargarDatosEstadoCasos();
             } else {
-                mostrarError("Este complemento debe ser ejecutado dentro de Microsoft Excel.");
+                mostrarError("Ejecutar dentro de Microsoft Excel.");
             }
         });
 
@@ -166,7 +164,6 @@
                     worksheets.load("items/name");
                     await context.sync();
 
-                    // Búsqueda flexible de la pestaña "ESTADO CASOS"
                     let sheet = null;
                     for (let i = 0; i < worksheets.items.length; i++) {
                         if (worksheets.items[i].name.trim().toUpperCase() === "ESTADO CASOS") {
@@ -176,18 +173,13 @@
                     }
 
                     if (!sheet) {
-                        mostrarError('No se encontró la pestaña "ESTADO CASOS" en el libro de Excel.');
+                        mostrarError('No se encontró la pestaña "ESTADO CASOS".');
                         return;
                     }
 
-                    // Cargar las celdas desde la fila 2 a la 500
-                    const rangeNombres = sheet.getRange("B2:D500");
-                    const rangeEdades = sheet.getRange("G2:G500");
-                    const rangeEstados = sheet.getRange("P2:P500");
-
-                    rangeNombres.load("values");
-                    rangeEdades.load("values");
-                    rangeEstados.load("values");
+                    // Rango completo desde A2 a P500
+                    const rangeTotal = sheet.getRange("A2:P500");
+                    rangeTotal.load("values");
 
                     await context.sync();
 
@@ -195,19 +187,25 @@
                     combo.innerHTML = '<option value="">-- Seleccionar --</option>';
                     listaNNAs = [];
 
-                    for (let i = 0; i < rangeNombres.values.length; i++) {
-                        const nombre = rangeNombres.values[i][0];
-                        const apPaterno = rangeNombres.values[i][1];
-                        const apMaterno = rangeNombres.values[i][2];
-                        const edadVal = rangeEdades.values[i][0];
-                        const estado = rangeEstados.values[i][0];
+                    const filas = rangeTotal.values;
 
-                        // Si hay nombre y el estado NO es EGRESADO
-                        if (nombre && String(nombre).trim() !== "" && String(estado).trim().toUpperCase() !== "EGRESADO") {
+                    for (let i = 0; i < filas.length; i++) {
+                        const fila = filas[i];
+                        
+                        // Índices: B=1 (Nombre), C=2 (Ap. Paterno), D=3 (Ap. Materno), G=6 (Edad), P=15 (Estado Intervención)
+                        const nombre = fila[1];
+                        const apPaterno = fila[2];
+                        const apMaterno = fila[3];
+                        const edadRaw = String(fila[6] || ""); 
+                        const estadoP = String(fila[15] || "").trim().toUpperCase();
+
+                        // Condición estricta: Debe tener nombre y la columna P NO debe decir "EGRESADO"
+                        if (nombre && String(nombre).trim() !== "" && estadoP !== "EGRESADO") {
                             const nomPropio = `${nombre} ${apPaterno || ''} ${apMaterno || ''}`.replace(/\s+/g, ' ').trim();
                             
-                            const edadNum = parseFloat(edadVal) || 0;
-                            const clasificacion = edadNum <= 11 ? "Niño/a" : "Adolescente";
+                            // Extrae números puros (ej: "11 años" -> 11)
+                            const numeroEdad = parseInt(edadRaw.replace(/\D/g, ""), 10) || 0;
+                            const clasificacion = numeroEdad <= 11 ? "Niño/a" : "Adolescente";
 
                             listaNNAs.push({
                                 nomPropio: nomPropio,
@@ -222,12 +220,12 @@
                     }
 
                     if (listaNNAs.length === 0) {
-                        combo.innerHTML = '<option value="">No se encontraron registros activos</option>';
+                        combo.innerHTML = '<option value="">No hay casos activos disponibles</option>';
                     }
                 });
             } catch (error) {
                 console.error("Error al cargar datos:", error);
-                mostrarError("Error al conectar con Excel: " + (error.message || error));
+                mostrarError("Error al leer Excel: " + (error.message || error));
             }
         }
 
@@ -294,11 +292,11 @@
                     }
 
                     if (!sheetCert) {
-                        alert('No se encontró la pestaña "Certif. Atención" para escribir los datos.');
+                        alert('No se encontró la pestaña "Certif. Atención".');
                         return;
                     }
 
-                    // Escribir datos
+                    // Rellenar celdas auxiliares
                     sheetCert.getRange("G2").values = [[nnaSeleccionado.nomPropio]];     
                     sheetCert.getRange("H2").values = [[nnaSeleccionado.clasificacion]]; 
                     sheetCert.getRange("I2").values = [[fechaFormateada]];              
@@ -307,7 +305,7 @@
                     sheetCert.getRange("G5").values = [[horaInicio]]; 
                     sheetCert.getRange("H5").values = [[horaFin]];    
 
-                    // Configurar área de impresión
+                    // Configurar área de impresión (columnas A:F)
                     sheetCert.pageLayout.setPrintArea("A:F");
                     sheetCert.pageLayout.fitToPagesWide = 1;
                     sheetCert.pageLayout.fitToPagesTall = 0;
