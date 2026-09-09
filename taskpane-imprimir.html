@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Imprimir Certificado</title>
+    <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js" type="text/javascript"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 15px; color: #333; font-size: 13px; }
+        h3 { color: #0078d4; margin-top: 0; }
+        .campo { margin-bottom: 12px; }
+        label { font-weight: bold; display: block; margin-bottom: 4px; }
+        input[type="text"], input[type="date"], select { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-family: inherit; }
+        .info-box { background-color: #f3f2f1; padding: 8px; border-radius: 4px; border-left: 4px solid #0078d4; margin-bottom: 12px; font-weight: bold; }
+        .checkbox-container { display: flex; align-items: center; gap: 8px; margin-top: 8px; cursor: pointer; }
+        .checkbox-container input { width: auto; }
+        .btn-imprimir { width: 100%; background-color: #0078d4; color: white; border: none; padding: 12px; font-size: 14px; font-weight: bold; cursor: pointer; border-radius: 4px; margin-top: 15px; }
+        .btn-imprimir:hover { background-color: #005a9e; }
+        .oculto { display: none; }
+        .error { color: #d13438; font-size: 11px; margin-top: 4px; display: none; }
+    </style>
+</head>
+<body>
+    <h3>Certificado de Atención</h3>
+
+    <!-- 1. Menú Desplegable -->
+    <div class="campo">
+        <label for="selectNNA">Seleccionar NNA:</label>
+        <select id="selectNNA" onchange="actualizarClasificacionEdad()">
+            <option value="">Cargando lista...</option>
+        </select>
+    </div>
+
+    <!-- 2. Clasificación de Edad -->
+    <div class="info-box">
+        Es: <span id="lblClasificacion">Seleccione un NNA...</span>
+    </div>
+
+    <!-- 3. Fecha de Emisión (Hoy por defecto, modificable) -->
+    <div class="campo">
+        <label for="dtFecha">Fecha del Certificado:</label>
+        <input type="date" id="dtFecha" />
+    </div>
+
+    <!-- 4. Acompañante -->
+    <div class="campo">
+        <label for="txtAcompanante">¿Con quién vino a atención? *</label>
+        <input type="text" id="txtAcompanante" placeholder="Ingrese nombre del adulto/a" />
+        <span id="errAcompanante" class="error">Este campo es obligatorio</span>
+    </div>
+
+    <!-- 5. Casilla opcional: Dónde se presentará -->
+    <div class="campo">
+        <label class="checkbox-container">
+            <input type="checkbox" id="chkPresentar" onchange="togglePresentar()" />
+            ¿Desea añadir dónde se presentará?
+        </label>
+    </div>
+
+    <div id="divPresentar" class="campo oculto">
+        <label for="txtPresentarEn">Para ser presentado en...</label>
+        <input type="text" id="txtPresentarEn" placeholder="Nombre colegio, trabajo, etc." />
+    </div>
+
+    <button class="btn-imprimir" onclick="generarEImprimir()">📄 Llenar e Imprimir</button>
+
+    <script>
+    let listaNNAs = [];
+
+    // Función auxiliar para obtener y formatear la fecha de hoy a YYYY-MM-DD
+    function obtenerFechaHoyISO() {
+        const hoy = new Date();
+        const year = hoy.getFullYear();
+        const month = String(hoy.getMonth() + 1).padStart(2, '0');
+        const day = String(hoy.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    // Apenas el DOM HTML esté listo, forzamos el valor de la fecha
+    document.addEventListener("DOMContentLoaded", () => {
+        const inputFecha = document.getElementById("dtFecha");
+        if (inputFecha) {
+            inputFecha.value = obtenerFechaHoyISO();
+        }
+    });
+
+    Office.onReady(() => {
+        // Respaldo de seguridad por si Office.onReady carga después
+        const inputFecha = document.getElementById("dtFecha");
+        if (inputFecha && !inputFecha.value) {
+            inputFecha.value = obtenerFechaHoyISO();
+        }
+
+        // Cargar NNA desde la hoja "ESTADO CASOS"
+        cargarDatosEstadoCasos();
+    });
+
+    async function cargarDatosEstadoCasos() {
+        try {
+            await Excel.run(async (context) => {
+                const sheet = context.workbook.worksheets.getItem("ESTADO CASOS");
+                
+                const rangeNombres = sheet.getRange("B2:D500");
+                const rangeEdades = sheet.getRange("G2:G500");
+                const rangeEstados = sheet.getRange("P2:P500");
+
+                rangeNombres.load("values");
+                rangeEdades.load("values");
+                rangeEstados.load("values");
+
+                await context.sync();
+
+                const combo = document.getElementById("selectNNA");
+                combo.innerHTML = '<option value="">-- Seleccionar --</option>';
+                listaNNAs = [];
+
+                for (let i = 0; i < rangeNombres.values.length; i++) {
+                    const nombre = rangeNombres.values[i][0];
+                    const apPaterno = rangeNombres.values[i][1];
+                    const apMaterno = rangeNombres.values[i][2];
+                    const edadVal = rangeEdades.values[i][0];
+                    const estado = rangeEstados.values[i][0];
+
+                    if (nombre && String(estado).trim().toUpperCase() !== "EGRESADO") {
+                        const nomPropio = `${nombre} ${apPaterno || ''} ${apMaterno || ''}`.replace(/\s+/g, ' ').trim();
+                        
+                        const edadNum = parseFloat(edadVal) || 0;
+                        const clasificacion = edadNum <= 11 ? "Niño/a" : "Adolescente";
+
+                        listaNNAs.push({
+                            nomPropio: nomPropio,
+                            clasificacion: clasificacion
+                        });
+
+                        const opt = document.createElement("option");
+                        opt.value = listaNNAs.length - 1;
+                        opt.textContent = nomPropio;
+                        combo.appendChild(opt);
+                    }
+                }
+            });
+        } catch (error) {
+            console.error("Error al cargar la lista de NNA:", error);
+        }
+    }
+
+    function actualizarClasificacionEdad() {
+        const index = document.getElementById("selectNNA").value;
+        const lbl = document.getElementById("lblClasificacion");
+
+        if (index !== "") {
+            lbl.textContent = listaNNAs[index].clasificacion;
+        } else {
+            lbl.textContent = "Seleccione un NNA...";
+        }
+    }
+
+    function togglePresentar() {
+        const chk = document.getElementById("chkPresentar").checked;
+        const div = document.getElementById("divPresentar");
+        div.classList.toggle("oculto", !chk);
+    }
+
+    async function generarEImprimir() {
+        const select = document.getElementById("selectNNA");
+        const acompanante = document.getElementById("txtAcompanante").value.trim();
+        const errAcom = document.getElementById("errAcompanante");
+
+        if (!acompanante) {
+            errAcom.style.display = "block";
+            return;
+        } else {
+            errAcom.style.display = "none";
+        }
+
+        if (select.value === "") {
+            alert("Por favor, seleccione un NNA de la lista.");
+            return;
+        }
+
+        const nnaSeleccionado = listaNNAs[select.value];
+        
+        // Obtener la fecha del input (si no la tocaron, usará la de hoy por defecto)
+        const rawFecha = document.getElementById("dtFecha").value || obtenerFechaHoyISO();
+        const partes = rawFecha.split("-");
+        const fechaFormateada = `${partes[2]}/${partes[1]}/${partes[0]}`;
+
+        let presentarEn = "";
+        if (document.getElementById("chkPresentar").checked) {
+            presentarEn = document.getElementById("txtPresentarEn").value.trim();
+        }
+
+        try {
+            await Excel.run(async (context) => {
+                const sheetCert = context.workbook.worksheets.getItem("Certif. Atención");
+
+                // Rellenar las celdas en "Certif. Atención":
+                sheetCert.getRange("G2").values = [[nnaSeleccionado.nomPropio]];     
+                sheetCert.getRange("H2").values = [[nnaSeleccionado.clasificacion]]; 
+                sheetCert.getRange("I2").values = [[fechaFormateada]];              
+                sheetCert.getRange("G4").values = [[acompanante]];                  
+                sheetCert.getRange("H3").values = [[presentarEn]];                  
+
+                // Configurar área de impresión (columnas A:F)
+                sheetCert.pageLayout.setPrintArea("A:F");
+                sheetCert.pageLayout.fitToPagesWide = 1;
+                sheetCert.pageLayout.fitToPagesTall = 0;
+
+                sheetCert.activate();
+                await context.sync();
+            });
+
+            // Abrir ventana de impresión nativa
+            window.print();
+
+        } catch (error) {
+            console.error("Error al escribir celdas e imprimir:", error);
+        }
+    }
+</script>
+</body>
+</html>
