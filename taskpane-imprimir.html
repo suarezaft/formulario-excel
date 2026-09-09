@@ -11,6 +11,13 @@
         .campo { margin-bottom: 12px; }
         label { font-weight: bold; display: block; margin-bottom: 4px; }
         input[type="text"], input[type="date"], select { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-family: inherit; }
+        
+        /* Estilos para los selectores de hora y minutos en intervalos */
+        .hora-container { display: flex; align-items: center; gap: 4px; }
+        .hora-grupo { display: flex; align-items: center; gap: 2px; flex: 1; }
+        .hora-grupo select { padding: 6px 2px; text-align: center; }
+        .hora-separador { font-weight: bold; color: #666; padding: 0 4px; }
+
         .info-box { background-color: #f3f2f1; padding: 8px; border-radius: 4px; border-left: 4px solid #0078d4; margin-bottom: 12px; font-weight: bold; }
         .checkbox-container { display: flex; align-items: center; gap: 8px; margin-top: 8px; cursor: pointer; }
         .checkbox-container input { width: auto; }
@@ -23,7 +30,7 @@
 <body>
     <h3>Certificado de Atención</h3>
 
-    <!-- 1. Menú Desplegable -->
+    <!-- 1. Menú Desplegable NNA -->
     <div class="campo">
         <label for="selectNNA">Seleccionar NNA:</label>
         <select id="selectNNA" onchange="actualizarClasificacionEdad()">
@@ -33,23 +40,79 @@
 
     <!-- 2. Clasificación de Edad -->
     <div class="info-box">
-        Es: <span id="lblClasificacion">Seleccione un NNA...</span>
+        Clasificación: <span id="lblClasificacion">Seleccione un NNA...</span>
     </div>
 
-    <!-- 3. Fecha de Emisión (Hoy por defecto, modificable) -->
+    <!-- 3. Fecha de Emisión -->
     <div class="campo">
         <label for="dtFecha">Fecha del Certificado:</label>
         <input type="date" id="dtFecha" />
     </div>
 
-    <!-- 4. Acompañante -->
+    <!-- 4. Hora de Atención (Intervalos de 15 min) -->
+    <div class="campo">
+        <label>Hora de Atención:</label>
+        <div class="hora-container">
+            <!-- Hora Inicio -->
+            <div class="hora-grupo">
+                <select id="hInicio">
+                    <option value="08">08</option>
+                    <option value="09" selected>09</option>
+                    <option value="10">10</option>
+                    <option value="11">11</option>
+                    <option value="12">12</option>
+                    <option value="13">13</option>
+                    <option value="14">14</option>
+                    <option value="15">15</option>
+                    <option value="16">16</option>
+                    <option value="17">17</option>
+                    <option value="18">18</option>
+                </select>
+                <span>:</span>
+                <select id="mInicio">
+                    <option value="00" selected>00</option>
+                    <option value="15">15</option>
+                    <option value="30">30</option>
+                    <option value="45">45</option>
+                </select>
+            </div>
+
+            <span class="hora-separador">a</span>
+
+            <!-- Hora Fin -->
+            <div class="hora-grupo">
+                <select id="hFin">
+                    <option value="08">08</option>
+                    <option value="09">09</option>
+                    <option value="10" selected>10</option>
+                    <option value="11">11</option>
+                    <option value="12">12</option>
+                    <option value="13">13</option>
+                    <option value="14">14</option>
+                    <option value="15">15</option>
+                    <option value="16">16</option>
+                    <option value="17">17</option>
+                    <option value="18">18</option>
+                </select>
+                <span>:</span>
+                <select id="mFin">
+                    <option value="00" selected>00</option>
+                    <option value="15">15</option>
+                    <option value="30">30</option>
+                    <option value="45">45</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. Acompañante -->
     <div class="campo">
         <label for="txtAcompanante">¿Con quién vino a atención? *</label>
-        <input type="text" id="txtAcompanante" placeholder="Ingrese nombre del adulto/a" />
+        <input type="text" id="txtAcompanante" placeholder="Ej: Madre, Padre, Tutor legal" />
         <span id="errAcompanante" class="error">Este campo es obligatorio</span>
     </div>
 
-    <!-- 5. Casilla opcional: Dónde se presentará -->
+    <!-- 6. Casilla opcional: Dónde se presentará -->
     <div class="campo">
         <label class="checkbox-container">
             <input type="checkbox" id="chkPresentar" onchange="togglePresentar()" />
@@ -59,164 +122,168 @@
 
     <div id="divPresentar" class="campo oculto">
         <label for="txtPresentarEn">Para ser presentado en...</label>
-        <input type="text" id="txtPresentarEn" placeholder="Nombre colegio, trabajo, etc." />
+        <input type="text" id="txtPresentarEn" placeholder="Ej: Establecimiento Educacional, Tribunal..." />
     </div>
 
     <button class="btn-imprimir" onclick="generarEImprimir()">📄 Llenar e Imprimir</button>
 
     <script>
-    let listaNNAs = [];
+        let listaNNAs = [];
 
-    // Función auxiliar para obtener y formatear la fecha de hoy a YYYY-MM-DD
-    function obtenerFechaHoyISO() {
-        const hoy = new Date();
-        const year = hoy.getFullYear();
-        const month = String(hoy.getMonth() + 1).padStart(2, '0');
-        const day = String(hoy.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-    }
-
-    // Apenas el DOM HTML esté listo, forzamos el valor de la fecha
-    document.addEventListener("DOMContentLoaded", () => {
-        const inputFecha = document.getElementById("dtFecha");
-        if (inputFecha) {
-            inputFecha.value = obtenerFechaHoyISO();
-        }
-    });
-
-    Office.onReady(() => {
-        // Respaldo de seguridad por si Office.onReady carga después
-        const inputFecha = document.getElementById("dtFecha");
-        if (inputFecha && !inputFecha.value) {
-            inputFecha.value = obtenerFechaHoyISO();
+        function obtenerFechaHoyISO() {
+            const hoy = new Date();
+            const year = hoy.getFullYear();
+            const month = String(hoy.getMonth() + 1).padStart(2, '0');
+            const day = String(hoy.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
         }
 
-        // Cargar NNA desde la hoja "ESTADO CASOS"
-        cargarDatosEstadoCasos();
-    });
+        document.addEventListener("DOMContentLoaded", () => {
+            const inputFecha = document.getElementById("dtFecha");
+            if (inputFecha) {
+                inputFecha.value = obtenerFechaHoyISO();
+            }
+        });
 
-    async function cargarDatosEstadoCasos() {
-        try {
-            await Excel.run(async (context) => {
-                const sheet = context.workbook.worksheets.getItem("ESTADO CASOS");
-                
-                const rangeNombres = sheet.getRange("B2:D500");
-                const rangeEdades = sheet.getRange("G2:G500");
-                const rangeEstados = sheet.getRange("P2:P500");
+        Office.onReady(() => {
+            const inputFecha = document.getElementById("dtFecha");
+            if (inputFecha && !inputFecha.value) {
+                inputFecha.value = obtenerFechaHoyISO();
+            }
 
-                rangeNombres.load("values");
-                rangeEdades.load("values");
-                rangeEstados.load("values");
+            cargarDatosEstadoCasos();
+        });
 
-                await context.sync();
+        async function cargarDatosEstadoCasos() {
+            try {
+                await Excel.run(async (context) => {
+                    const sheet = context.workbook.worksheets.getItem("ESTADO CASOS");
+                    
+                    const rangeNombres = sheet.getRange("B2:D500");
+                    const rangeEdades = sheet.getRange("G2:G500");
+                    const rangeEstados = sheet.getRange("P2:P500");
 
-                const combo = document.getElementById("selectNNA");
-                combo.innerHTML = '<option value="">-- Seleccionar --</option>';
-                listaNNAs = [];
+                    rangeNombres.load("values");
+                    rangeEdades.load("values");
+                    rangeEstados.load("values");
 
-                for (let i = 0; i < rangeNombres.values.length; i++) {
-                    const nombre = rangeNombres.values[i][0];
-                    const apPaterno = rangeNombres.values[i][1];
-                    const apMaterno = rangeNombres.values[i][2];
-                    const edadVal = rangeEdades.values[i][0];
-                    const estado = rangeEstados.values[i][0];
+                    await context.sync();
 
-                    if (nombre && String(estado).trim().toUpperCase() !== "EGRESADO") {
-                        const nomPropio = `${nombre} ${apPaterno || ''} ${apMaterno || ''}`.replace(/\s+/g, ' ').trim();
-                        
-                        const edadNum = parseFloat(edadVal) || 0;
-                        const clasificacion = edadNum <= 11 ? "Niño/a" : "Adolescente";
+                    const combo = document.getElementById("selectNNA");
+                    combo.innerHTML = '<option value="">-- Seleccionar --</option>';
+                    listaNNAs = [];
 
-                        listaNNAs.push({
-                            nomPropio: nomPropio,
-                            clasificacion: clasificacion
-                        });
+                    for (let i = 0; i < rangeNombres.values.length; i++) {
+                        const nombre = rangeNombres.values[i][0];
+                        const apPaterno = rangeNombres.values[i][1];
+                        const apMaterno = rangeNombres.values[i][2];
+                        const edadVal = rangeEdades.values[i][0];
+                        const estado = rangeEstados.values[i][0];
 
-                        const opt = document.createElement("option");
-                        opt.value = listaNNAs.length - 1;
-                        opt.textContent = nomPropio;
-                        combo.appendChild(opt);
+                        if (nombre && String(estado).trim().toUpperCase() !== "EGRESADO") {
+                            const nomPropio = `${nombre} ${apPaterno \vert{}\vert{} ''}${apMaterno || ''}`.replace(/\s+/g, ' ').trim();
+                            
+                            const edadNum = parseFloat(edadVal) || 0;
+                            const clasificacion = edadNum <= 11 ? "Niño/a" : "Adolescente";
+
+                            listaNNAs.push({
+                                nomPropio: nomPropio,
+                                clasificacion: clasificacion
+                            });
+
+                            const opt = document.createElement("option");
+                            opt.value = listaNNAs.length - 1;
+                            opt.textContent = nomPropio;
+                            combo.appendChild(opt);
+                        }
                     }
-                }
-            });
-        } catch (error) {
-            console.error("Error al cargar la lista de NNA:", error);
-        }
-    }
-
-    function actualizarClasificacionEdad() {
-        const index = document.getElementById("selectNNA").value;
-        const lbl = document.getElementById("lblClasificacion");
-
-        if (index !== "") {
-            lbl.textContent = listaNNAs[index].clasificacion;
-        } else {
-            lbl.textContent = "Seleccione un NNA...";
-        }
-    }
-
-    function togglePresentar() {
-        const chk = document.getElementById("chkPresentar").checked;
-        const div = document.getElementById("divPresentar");
-        div.classList.toggle("oculto", !chk);
-    }
-
-    async function generarEImprimir() {
-        const select = document.getElementById("selectNNA");
-        const acompanante = document.getElementById("txtAcompanante").value.trim();
-        const errAcom = document.getElementById("errAcompanante");
-
-        if (!acompanante) {
-            errAcom.style.display = "block";
-            return;
-        } else {
-            errAcom.style.display = "none";
+                });
+            } catch (error) {
+                console.error("Error al cargar la lista de NNA:", error);
+            }
         }
 
-        if (select.value === "") {
-            alert("Por favor, seleccione un NNA de la lista.");
-            return;
+        function actualizarClasificacionEdad() {
+            const index = document.getElementById("selectNNA").value;
+            const lbl = document.getElementById("lblClasificacion");
+
+            if (index !== "") {
+                lbl.textContent = listaNNAs[index].clasificacion;
+            } else {
+                lbl.textContent = "Seleccione un NNA...";
+            }
         }
 
-        const nnaSeleccionado = listaNNAs[select.value];
-        
-        // Obtener la fecha del input (si no la tocaron, usará la de hoy por defecto)
-        const rawFecha = document.getElementById("dtFecha").value || obtenerFechaHoyISO();
-        const partes = rawFecha.split("-");
-        const fechaFormateada = `${partes[2]}/${partes[1]}/${partes[0]}`;
-
-        let presentarEn = "";
-        if (document.getElementById("chkPresentar").checked) {
-            presentarEn = document.getElementById("txtPresentarEn").value.trim();
+        function togglePresentar() {
+            const chk = document.getElementById("chkPresentar").checked;
+            const div = document.getElementById("divPresentar");
+            div.classList.toggle("oculto", !chk);
         }
 
-        try {
-            await Excel.run(async (context) => {
-                const sheetCert = context.workbook.worksheets.getItem("Certif. Atención");
+        async function generarEImprimir() {
+            const select = document.getElementById("selectNNA");
+            const acompanante = document.getElementById("txtAcompanante").value.trim();
+            const errAcom = document.getElementById("errAcompanante");
 
-                // Rellenar las celdas en "Certif. Atención":
-                sheetCert.getRange("G2").values = [[nnaSeleccionado.nomPropio]];     
-                sheetCert.getRange("H2").values = [[nnaSeleccionado.clasificacion]]; 
-                sheetCert.getRange("I2").values = [[fechaFormateada]];              
-                sheetCert.getRange("G4").values = [[acompanante]];                  
-                sheetCert.getRange("H3").values = [[presentarEn]];                  
+            if (!acompanante) {
+                errAcom.style.display = "block";
+                return;
+            } else {
+                errAcom.style.display = "none";
+            }
 
-                // Configurar área de impresión (columnas A:F)
-                sheetCert.pageLayout.setPrintArea("A:F");
-                sheetCert.pageLayout.fitToPagesWide = 1;
-                sheetCert.pageLayout.fitToPagesTall = 0;
+            if (select.value === "") {
+                alert("Por favor, seleccione un NNA de la lista.");
+                return;
+            }
 
-                sheetCert.activate();
-                await context.sync();
-            });
+            const nnaSeleccionado = listaNNAs[select.value];
+            
+            // Fecha
+            const rawFecha = document.getElementById("dtFecha").value || obtenerFechaHoyISO();
+            const partes = rawFecha.split("-");
+            const fechaFormateada = `${partes[2]}/${partes[1]}/${partes[0]}`;
 
-            // Abrir ventana de impresión nativa
-            window.print();
+            // Construcción del formato HH:MM desde las listas desplegables
+            const horaInicio = `${document.getElementById("hInicio").value}:${document.getElementById("mInicio").value}`;
+            const horaFin = `${document.getElementById("hFin").value}:${document.getElementById("mFin").value}`;
 
-        } catch (error) {
-            console.error("Error al escribir celdas e imprimir:", error);
+            let presentarEn = "";
+            if (document.getElementById("chkPresentar").checked) {
+                presentarEn = document.getElementById("txtPresentarEn").value.trim();
+            }
+
+            try {
+                await Excel.run(async (context) => {
+                    const sheetCert = context.workbook.worksheets.getItem("Certif. Atención");
+
+                    // Rellenar celdas en "Certif. Atención":
+                    sheetCert.getRange("G2").values = [[nnaSeleccionado.nomPropio]];     
+                    sheetCert.getRange("H2").values = [[nnaSeleccionado.clasificacion]]; 
+                    sheetCert.getRange("I2").values = [[fechaFormateada]];              
+                    sheetCert.getRange("G4").values = [[acompanante]];                  
+                    sheetCert.getRange("H3").values = [[presentarEn]]; 
+                    
+                    // Horas ensambladas (ej: "09:15" en G5 y "10:30" en H5):
+                    sheetCert.getRange("G5").values = [[horaInicio]]; 
+                    sheetCert.getRange("H5").values = [[horaFin]];    
+
+                    // Configurar área de impresión (columnas A:F)
+                    sheetCert.pageLayout.setPrintArea("A:F");
+                    sheetCert.pageLayout.fitToPagesWide = 1;
+                    sheetCert.pageLayout.fitToPagesTall = 0;
+
+                    sheetCert.activate();
+                    await context.sync();
+                });
+
+                // Abrir ventana de impresión nativa
+                window.print();
+
+            } catch (error) {
+                console.error("Error al escribir celdas e imprimir:", error);
+            }
         }
-    }
-</script>
+    </script>
 </body>
 </html>
