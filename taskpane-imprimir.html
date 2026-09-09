@@ -12,7 +12,7 @@
         label { font-weight: bold; display: block; margin-bottom: 4px; }
         input[type="text"], input[type="date"], select { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-family: inherit; }
         
-        /* Estilos para los selectores de hora y minutos en intervalos */
+        /* Estilos para los selectores de hora y minutos */
         .hora-container { display: flex; align-items: center; gap: 4px; }
         .hora-grupo { display: flex; align-items: center; gap: 2px; flex: 1; }
         .hora-grupo select { padding: 6px 2px; text-align: center; }
@@ -34,7 +34,7 @@
     <div class="campo">
         <label for="selectNNA">Seleccionar NNA:</label>
         <select id="selectNNA" onchange="actualizarClasificacionEdad()">
-            <option value="">Cargando lista...</option>
+            <option value="">Cargando lista desde ESTADO CASOS...</option>
         </select>
     </div>
 
@@ -108,7 +108,7 @@
     <!-- 5. Acompañante -->
     <div class="campo">
         <label for="txtAcompanante">¿Con quién vino a atención? *</label>
-        <input type="text" id="txtAcompanante" placeholder="Nombre adulto" />
+        <input type="text" id="txtAcompanante" placeholder="Ej: Madre, Padre, Tutor legal" />
         <span id="errAcompanante" class="error">Este campo es obligatorio</span>
     </div>
 
@@ -157,6 +157,7 @@
         async function cargarDatosEstadoCasos() {
             try {
                 await Excel.run(async (context) => {
+                    // Acceso a la hoja "ESTADO CASOS"
                     const sheet = context.workbook.worksheets.getItem("ESTADO CASOS");
                     
                     const rangeNombres = sheet.getRange("B2:D500");
@@ -181,7 +182,7 @@
                         const estado = rangeEstados.values[i][0];
 
                         if (nombre && String(estado).trim().toUpperCase() !== "EGRESADO") {
-                            const nomPropio = `${nombre} ${apPaterno \vert{}\vert{} ''}${apMaterno || ''}`.replace(/\s+/g, ' ').trim();
+                            const nomPropio = `${nombre} ${apPaterno || ''} ${apMaterno || ''}`.replace(/\s+/g, ' ').trim();
                             
                             const edadNum = parseFloat(edadVal) || 0;
                             const clasificacion = edadNum <= 11 ? "Niño/a" : "Adolescente";
@@ -199,7 +200,7 @@
                     }
                 });
             } catch (error) {
-                console.error("Error al cargar la lista de NNA:", error);
+                console.error("Error al cargar la lista de NNA desde ESTADO CASOS:", error);
             }
         }
 
@@ -244,7 +245,7 @@
             const partes = rawFecha.split("-");
             const fechaFormateada = `${partes[2]}/${partes[1]}/${partes[0]}`;
 
-            // Construcción del formato HH:MM desde las listas desplegables
+            // Construcción del formato HH:MM
             const horaInicio = `${document.getElementById("hInicio").value}:${document.getElementById("mInicio").value}`;
             const horaFin = `${document.getElementById("hFin").value}:${document.getElementById("mFin").value}`;
 
@@ -257,16 +258,16 @@
                 await Excel.run(async (context) => {
                     const sheetCert = context.workbook.worksheets.getItem("Certif. Atención");
 
-                    // Rellenar celdas en "Certif. Atención":
+                    // Rellenar celdas auxiliares en "Certif. Atención"
                     sheetCert.getRange("G2").values = [[nnaSeleccionado.nomPropio]];     
                     sheetCert.getRange("H2").values = [[nnaSeleccionado.clasificacion]]; 
                     sheetCert.getRange("I2").values = [[fechaFormateada]];              
                     sheetCert.getRange("G4").values = [[acompanante]];                  
                     sheetCert.getRange("H3").values = [[presentarEn]]; 
                     
-                    // Horas ensambladas (ej: "09:15" en G5 y "10:30" en H5):
-                    sheetCert.getRange("G5").values = [[horaInicio]]; 
-                    sheetCert.getRange("H5").values = [[horaFin]];    
+                    // Horas de atención
+                    sheetCert.getRange("G5").values = [[horaInicio]]; // Hora Inicio
+                    sheetCert.getRange("H5").values = [[horaFin]];    // Hora Fin
 
                     // Configurar área de impresión (columnas A:F)
                     sheetCert.pageLayout.setPrintArea("A:F");
