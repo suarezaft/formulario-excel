@@ -22,8 +22,10 @@
         .checkbox-container input { width: auto; }
         .btn-imprimir { width: 100%; background-color: #0078d4; color: white; border: none; padding: 12px; font-size: 14px; font-weight: bold; cursor: pointer; border-radius: 4px; margin-top: 15px; }
         .btn-imprimir:hover { background-color: #005a9e; }
+        .btn-imprimir:disabled { background-color: #a19f9d; cursor: not-allowed; }
         .oculto { display: none; }
         .error { color: #d13438; font-size: 11px; margin-top: 4px; display: block; word-break: break-all; }
+        .alerta-cargando { background-color: #fff4ce; color: #797775; padding: 10px; border-radius: 4px; border: 1px solid #ffb900; margin-top: 12px; font-weight: bold; text-align: center; }
     </style>
 </head>
 <body>
@@ -39,9 +41,10 @@
         </select>
     </div>
 
-    <!-- 2. Clasificación de Edad -->
+    <!-- 2. Clasificación de Edad y RUT -->
     <div class="info-box">
-        Clasificación: <span id="lblClasificacion">Seleccione un NNA...</span>
+        Clasificación: <span id="lblClasificacion">Seleccione un NNA...</span><br/>
+        <small style="font-weight: normal; color: #555;">RUT: <span id="lblRut">-</span></small>
     </div>
 
     <!-- 3. Fecha de Emisión -->
@@ -50,7 +53,7 @@
         <input type="date" id="dtFecha" />
     </div>
 
-    <!-- 4. Hora de Atención (Intervalos de 15 min) -->
+    <!-- 4. Hora de Atención -->
     <div class="campo">
         <label>Hora de Atención:</label>
         <div class="hora-container">
@@ -124,9 +127,18 @@
         <input type="text" id="txtPresentarEn" placeholder="Ej: Establecimiento Educacional, Tribunal..." />
     </div>
 
-    <button class="btn-imprimir" onclick="generarEImprimir()">📄 Llenar e Imprimir</button>
+    <button id="btnGenerar" class="btn-imprimir" onclick="generarEImprimir()">📄 Generar e Imprimir</button>
+
+    <div id="msgCargando" class="alerta-cargando oculto">
+        ⏳ Generando documento desde plantilla Word...
+    </div>
+
+    <iframe id="printFrame" style="display:none;"></iframe>
 
     <script>
+        // PEGA AQUÍ LA URL COMPLETA DE TU DETONADOR DE POWER AUTOMATE
+        const URL_POWER_AUTOMATE = "https://prod-xx.westus.logic.azure.com:443/workflows/...";
+
         let listaNNAs = [];
 
         function obtenerFechaHoyISO() {
@@ -135,6 +147,22 @@
             const month = String(hoy.getMonth() + 1).padStart(2, '0');
             const day = String(hoy.getDate()).padStart(2, '0');
             return `${year}-${month}-${day}`;
+        }
+
+        function formatearFechaTexto(fechaISO) {
+            if (!fechaISO) return "";
+            
+            const meses = [
+                "enero", "febrero", "marzo", "abril", "mayo", "junio",
+                "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"
+            ];
+            
+            const partes = fechaISO.split("-");
+            const ano = partes[0];
+            const mesIndex = parseInt(partes[1], 10) - 1;
+            const dia = String(parseInt(partes[2], 10)).padStart(2, '0');
+            
+            return `${dia} de ${meses[mesIndex]} de ${ano}`;
         }
 
         document.addEventListener("DOMContentLoaded", () => {
@@ -177,7 +205,6 @@
                         return;
                     }
 
-                    // Rango completo desde A2 a P500
                     const rangeTotal = sheet.getRange("A2:P500");
                     rangeTotal.load("values");
 
@@ -192,23 +219,22 @@
                     for (let i = 0; i < filas.length; i++) {
                         const fila = filas[i];
                         
-                        // Índices: B=1 (Nombre), C=2 (Ap. Paterno), D=3 (Ap. Materno), G=6 (Edad), P=15 (Estado Intervención)
+                        // Índices: B=1 (Nombre), C=2 (Ap. Paterno), D=3 (Ap. Materno), E=4 (RUT), G=6 (Edad), P=15 (Estado)
                         const nombre = fila[1];
                         const apPaterno = fila[2];
                         const apMaterno = fila[3];
+                        const rutVal = String(fila[4] || "").trim();
                         const edadRaw = String(fila[6] || ""); 
                         const estadoP = String(fila[15] || "").trim().toUpperCase();
 
-                        // Condición estricta: Debe tener nombre y la columna P NO debe decir "EGRESADO"
                         if (nombre && String(nombre).trim() !== "" && estadoP !== "EGRESADO") {
                             const nomPropio = `${nombre} ${apPaterno || ''} ${apMaterno || ''}`.replace(/\s+/g, ' ').trim();
-                            
-                            // Extrae números puros (ej: "11 años" -> 11)
                             const numeroEdad = parseInt(edadRaw.replace(/\D/g, ""), 10) || 0;
                             const clasificacion = numeroEdad <= 11 ? "Niño/a" : "Adolescente";
 
                             listaNNAs.push({
                                 nomPropio: nomPropio,
+                                rut: rutVal || "Sin RUT",
                                 clasificacion: clasificacion
                             });
 
@@ -232,11 +258,14 @@
         function actualizarClasificacionEdad() {
             const index = document.getElementById("selectNNA").value;
             const lbl = document.getElementById("lblClasificacion");
+            const lblRut = document.getElementById("lblRut");
 
             if (index !== "") {
                 lbl.textContent = listaNNAs[index].clasificacion;
+                lblRut.textContent = listaNNAs[index].rut;
             } else {
                 lbl.textContent = "Seleccione un NNA...";
+                lblRut.textContent = "-";
             }
         }
 
@@ -246,10 +275,12 @@
             div.classList.toggle("oculto", !chk);
         }
 
-        async function generarEImprimir() {
+        function generarEImprimir() {
             const select = document.getElementById("selectNNA");
             const acompanante = document.getElementById("txtAcompanante").value.trim();
             const errAcom = document.getElementById("errAcompanante");
+            const btnGenerar = document.getElementById("btnGenerar");
+            const msgCargando = document.getElementById("msgCargando");
 
             if (!acompanante) {
                 errAcom.classList.remove("oculto");
@@ -266,8 +297,7 @@
             const nnaSeleccionado = listaNNAs[select.value];
             
             const rawFecha = document.getElementById("dtFecha").value || obtenerFechaHoyISO();
-            const partes = rawFecha.split("-");
-            const fechaFormateada = `${partes[2]}/${partes[1]}/${partes[0]}`;
+            const fechaFormateada = formatearFechaTexto(rawFecha);
 
             const horaInicio = `${document.getElementById("hInicio").value}:${document.getElementById("mInicio").value}`;
             const horaFin = `${document.getElementById("hFin").value}:${document.getElementById("mFin").value}`;
@@ -277,48 +307,47 @@
                 presentarEn = document.getElementById("txtPresentarEn").value.trim();
             }
 
-            try {
-                await Excel.run(async (context) => {
-                    const worksheets = context.workbook.worksheets;
-                    worksheets.load("items/name");
-                    await context.sync();
+            btnGenerar.disabled = true;
+            msgCargando.classList.remove("oculto");
 
-                    let sheetCert = null;
-                    for (let i = 0; i < worksheets.items.length; i++) {
-                        if (worksheets.items[i].name.trim().toUpperCase() === "CERTIF. ATENCIÓN") {
-                            sheetCert = worksheets.items[i];
-                            break;
-                        }
-                    }
+            const payload = {
+                nna: nnaSeleccionado.nomPropio,
+                rut: nnaSeleccionado.rut,
+                clasificacion: nnaSeleccionado.clasificacion,
+                fecha: fechaFormateada,
+                acompanante: acompanante,
+                presentarEn: presentarEn,
+                horaInicio: horaInicio,
+                horaFin: horaFin
+            };
 
-                    if (!sheetCert) {
-                        alert('No se encontró la pestaña "Certif. Atención".');
-                        return;
-                    }
+            fetch(URL_POWER_AUTOMATE, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            })
+            .then(response => {
+                if (!response.ok) throw new Error("Error en el servicio de generación");
+                return response.blob();
+            })
+            .then(pdfBlob => {
+                const blobUrl = URL.createObjectURL(pdfBlob);
+                const printFrame = document.getElementById("printFrame");
+                
+                printFrame.src = blobUrl;
+                printFrame.onload = function() {
+                    printFrame.contentWindow.focus();
+                    printFrame.contentWindow.print();
 
-                    // Rellenar celdas auxiliares
-                    sheetCert.getRange("G2").values = [[nnaSeleccionado.nomPropio]];     
-                    sheetCert.getRange("H2").values = [[nnaSeleccionado.clasificacion]]; 
-                    sheetCert.getRange("I2").values = [[fechaFormateada]];              
-                    sheetCert.getRange("G4").values = [[acompanante]];                  
-                    sheetCert.getRange("H3").values = [[presentarEn]]; 
-                    sheetCert.getRange("G5").values = [[horaInicio]]; 
-                    sheetCert.getRange("H5").values = [[horaFin]];    
-
-                    // Configurar área de impresión (columnas A:F)
-                    sheetCert.pageLayout.setPrintArea("A:F");
-                    sheetCert.pageLayout.fitToPagesWide = 1;
-                    sheetCert.pageLayout.fitToPagesTall = 0;
-
-                    sheetCert.activate();
-                    await context.sync();
-                });
-
-                window.print();
-
-            } catch (error) {
-                alert("Error al intentar actualizar la hoja: " + error.message);
-            }
+                    btnGenerar.disabled = false;
+                    msgCargando.classList.add("oculto");
+                };
+            })
+            .catch(error => {
+                alert("Ocurrió un error al generar la impresión: " + error.message);
+                btnGenerar.disabled = false;
+                msgCargando.classList.add("oculto");
+            });
         }
     </script>
 </body>
